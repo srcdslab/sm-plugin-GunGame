@@ -8,10 +8,17 @@ public void GG_ConfigNewSection(const char[] name)
     {
         ConfigState = CONFIG_STATE_CONFIG;
     } else if(strcmp("WeaponOrder", name, false) == 0) {
+        /* A WeaponOrder section defines the whole order: nothing from an earlier file or map stays. */
         RandomWeaponOrder = false;
+        WeaponOrderCount = 0;
+        for ( int i = 0; i < GUNGAME_MAX_LEVEL; i++ )
+        {
+            WeaponOrderName[i][0] = '\0';
+            g_Cfg_RandomWeaponReservLevels[i] = 0;
+        }
         ConfigState = CONFIG_STATE_EQUIP;
     } else if(strcmp("MultipleKillsPerLevel", name, false) == 0) {
-        ConfigReset = true;
+        ClearCustomKill();
         ConfigState = CONFIG_STATE_KILLS;
     } else if(strcmp("Sounds", name, false) == 0) {
         ConfigState = CONFIG_STATE_SOUNDS;
@@ -20,12 +27,6 @@ public void GG_ConfigNewSection(const char[] name)
 
 public void GG_ConfigKeyValue(const char[] key, const char[] value)
 {
-    if(ConfigReset && ConfigState == CONFIG_STATE_KILLS)
-    {
-        ConfigReset = false;
-        ClearCustomKill();
-    }
-
     switch(ConfigState)
     {
         case CONFIG_STATE_CONFIG:
@@ -70,12 +71,14 @@ public void GG_ConfigKeyValue(const char[] key, const char[] value)
             } else if(strcmp("MultiplySoundVolume", key, false) == 0) {
                 g_Cfg_MultiplySoundVolume = StringToInt(value);
             } else if(strcmp("DisableRtvLevel", key, false) == 0) {
-                g_cfgDisableRtvLevel = StringToInt(value) - 1;
+                /* 1-based level, 0 = disabled ("1" used to mean disabled). */
+                g_cfgDisableRtvLevel = StringToInt(value);
                 if ( g_cfgDisableRtvLevel < 0 ) {
                     g_cfgDisableRtvLevel = 0;
                 }
             } else if(strcmp("EnableFriendlyFireLevel", key, false) == 0) {
-                g_cfgEnableFriendlyFireLevel = StringToInt(value) - 1;
+                /* 1-based level, 0 = disabled. */
+                g_cfgEnableFriendlyFireLevel = StringToInt(value);
                 if ( g_cfgEnableFriendlyFireLevel < 0 ) {
                     g_cfgEnableFriendlyFireLevel = 0;
                 }
@@ -122,9 +125,10 @@ public void GG_ConfigKeyValue(const char[] key, const char[] value)
             } else if(strcmp("ScoreboardClearDeaths", key, false) == 0) {
                 g_Cfg_ScoreboardClearDeaths = StringToInt(value);
             } else if(strcmp("MaxHandicapLevel", key, false) == 0) {
+                /* 1-based level, 0 = no maximum. */
                 g_Cfg_MaxHandicapLevel = StringToInt(value);
-                if ( g_Cfg_MaxHandicapLevel ) {
-                    g_Cfg_MaxHandicapLevel -= 1;
+                if ( g_Cfg_MaxHandicapLevel < 0 ) {
+                    g_Cfg_MaxHandicapLevel = 0;
                 }
             } else if(strcmp("ShowSpawnMsgInHintBox", key, false) == 0) {
                 g_Cfg_ShowSpawnMsgInHintBox = StringToInt(value);
@@ -155,7 +159,8 @@ public void GG_ConfigKeyValue(const char[] key, const char[] value)
             } else if(strcmp("UnlimitedNadesMinPlayers", key, false) == 0) {
                 UnlimitedNadesMinPlayers = StringToInt(value);
             } else if(strcmp("WarmupRandomWeaponMode", key, false) == 0) {
-                WarmupRandomWeaponMode = StringToInt(value) != 0;
+                /* 0-3: modes 2 (every round) and 3 (every spawn) were read as 1. */
+                WarmupRandomWeaponMode = StringToInt(value);
                 WarmupRandomWeaponLevel = -1;
             } else if(strcmp("StripDeadPlayersWeapon", key, false) == 0) {
                 StripDeadPlayersWeapon = StringToInt(value);
@@ -271,23 +276,32 @@ public void GG_ConfigKeyValue(const char[] key, const char[] value)
         case CONFIG_STATE_EQUIP:
         {
             
-            if ( ( strcmp("RandomWeaponReserveLevels", key, false) == 0 ) && ( value[0] ) )
+            if ( strcmp("RandomWeaponReserveLevels", key, false) == 0 )
             {
-                char buffers[sizeof(g_Cfg_RandomWeaponReservLevels)][3];
-                ExplodeString(value, ",", buffers, sizeof(buffers), sizeof(buffers[]));
-                for ( int i = 0; i < sizeof(buffers); i++ )
+                for ( int i = 0; i < GUNGAME_MAX_LEVEL; i++ )
                 {
+                    g_Cfg_RandomWeaponReservLevels[i] = 0;
+                }
+                char buffers[GUNGAME_MAX_LEVEL][8];
+                int count = ExplodeString(value, ",", buffers, sizeof(buffers), sizeof(buffers[]));
+                for ( int i = 0, level; i < count; i++ )
+                {
+                    TrimString(buffers[i]);
                     if ( !buffers[i][0] ) {
-                        break;
+                        continue;
                     }
-                    g_Cfg_RandomWeaponReservLevels[StringToInt(buffers[i])-1] = 1;
+                    level = StringToInt(buffers[i]);
+                    if ( level < 1 || level > GUNGAME_MAX_LEVEL ) {
+                        LogError("[GunGame] RandomWeaponReserveLevels: invalid level \"%s\"", buffers[i]);
+                        continue;
+                    }
+                    g_Cfg_RandomWeaponReservLevels[level - 1] = 1;
                 }
             }
             else if ( ( strcmp("RandomWeaponOrder", key, false) == 0 ) && ( StringToInt(value) == 1 ) )
             {
                 // Setup random weapon order.
                 RandomWeaponOrder = true;
-                char tmpWeaponName[MAX_WEAPON_NAME_LEN];
                 int sizeOfRandom;
                 for ( int i = 0; i < WeaponOrderCount; i++ )
                 {
@@ -305,11 +319,16 @@ public void GG_ConfigKeyValue(const char[] key, const char[] value)
                         RandomWeaponOrderMap[i] = i;
                     }
                 }
+                /* Level i gets the weapon of the original level RandomWeaponOrderMap[i]
+                 * (MultipleKillsPerLevel relies on it). Swapping pairs did not do that. */
+                char shuffled[GUNGAME_MAX_LEVEL][MAX_WEAPON_NAME_LEN];
                 for ( int i = 0; i < WeaponOrderCount; i++ )
                 {
-                    tmpWeaponName = WeaponOrderName[RandomWeaponOrderMap[i]];
-                    WeaponOrderName[RandomWeaponOrderMap[i]] = WeaponOrderName[i];
-                    WeaponOrderName[i] = tmpWeaponName;
+                    strcopy(shuffled[i], sizeof(shuffled[]), WeaponOrderName[RandomWeaponOrderMap[i]]);
+                }
+                for ( int i = 0; i < WeaponOrderCount; i++ )
+                {
+                    strcopy(WeaponOrderName[i], sizeof(WeaponOrderName[]), shuffled[i]);
                 }
             }
             else
@@ -319,7 +338,15 @@ public void GG_ConfigKeyValue(const char[] key, const char[] value)
                 if ( 1 <= Level <= GUNGAME_MAX_LEVEL )
                 {
                     strcopy(WeaponOrderName[Level - 1], sizeof(WeaponOrderName[]), value);
-                    WeaponOrderCount = Level;
+                    /* The highest level read, not the last one. */
+                    if ( Level > WeaponOrderCount )
+                    {
+                        WeaponOrderCount = Level;
+                    }
+                }
+                else
+                {
+                    LogError("[GunGame] WeaponOrder: invalid level \"%s\" (1-%d)", key, GUNGAME_MAX_LEVEL);
                 }
             }
         }
@@ -379,7 +406,7 @@ public void GG_ConfigKeyValue(const char[] key, const char[] value)
 
 void ConfigSetSound(Sounds type, const char[] value) {
     if (!StrEqual(value, "", false)) {
-        char songs[16][PLATFORM_MAX_PATH];
+        char songs[32][PLATFORM_MAX_PATH];
         int songsfound = ExplodeString(value, ",", songs, sizeof(songs), sizeof(songs[]));
         if (songsfound > 1) {
             strcopy(EventSounds[type], sizeof(EventSounds[]), songs[UTIL_GetRandomInt(0, songsfound-1)]);
@@ -403,12 +430,11 @@ public void GG_ConfigEnd()
      * It should of been done reading the end of WeaponOrder List
      * Truncate the WeaponOrderCount if does not equal to MAX_LEVEL
      */
-    if(WeaponOrderCount != GUNGAME_MAX_LEVEL)
-    {
-        WeaponOrderName[WeaponOrderCount][0] = '\0';
-    }
-
     UTIL_ConvertWeaponToIndex();
+    for ( int i = WeaponOrderCount; i < GUNGAME_MAX_LEVEL; i++ )
+    {
+        WeaponOrderName[i][0] = '\0';
+    }
 
     WeaponLevelPages = (WeaponOrderCount / 7);
 
@@ -445,7 +471,7 @@ public void OnConfigsExecuted()
 
 void ClearCustomKill()
 {
-    for(int i = 0; i < WeaponOrderCount; i++)
+    for(int i = 0; i < GUNGAME_MAX_LEVEL; i++)
     {
         CustomKillPerLevel[i] = 0;
     }

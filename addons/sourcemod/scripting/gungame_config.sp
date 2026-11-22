@@ -209,16 +209,23 @@ void ReadConfig()
 
 static void InternalReadConfig(const char[] path)
 {
-    SMCError err = ConfigParser.ParseFile(path);
+    int line, col;
+    SMCError err = ConfigParser.ParseFile(path, line, col);
 
     if (err != SMCError_Okay)
     {
         char buffer[64];
-        if (ConfigParser.GetErrorString(err, buffer, sizeof(buffer)))
+        if (!ConfigParser.GetErrorString(err, buffer, sizeof(buffer)))
         {
-            PrintToServer("[GunGame] %s: %s", path, buffer);
-        } else {
-            PrintToServer("[GunGame] %s: Fatal parse error", path);
+            strcopy(buffer, sizeof(buffer), "Fatal parse error");
+        }
+        LogError("[GunGame] %s (line %d, col %d): %s", path, line, col, buffer);
+
+        /* SourceMod does not call ParseEnd when the file cannot be opened: count it here,
+         * else GG_ConfigEnd never fires and GunGame does not start on this map. */
+        if (err == SMCError_StreamOpen)
+        {
+            ConfigFileDone();
         }
     }
 }
@@ -237,7 +244,8 @@ public SMCResult ReadConfig_NewSection(SMCParser smc, const char[] name, bool op
 
 public SMCResult ReadConfig_KeyValue(SMCParser smc, const char[] key, const char[] value, bool key_quotes, bool value_quotes)
 {
-    if (key[0] && value[0])
+    /* Empty values are forwarded too: "NadeBonus" "" must reset what an earlier file set. */
+    if (key[0])
     {
         Call_StartForward(FwdConfigKeyValue);
         Call_PushString(key);
@@ -254,6 +262,11 @@ public SMCResult ReadConfig_EndSection(SMCParser smc)
 }
 
 public void ReadConfig_ParseEnd(SMCParser smc, bool halted, bool failed)
+{
+    ConfigFileDone();
+}
+
+static void ConfigFileDone()
 {
     Call_StartForward(FwdConfigParseEnd);
     Call_Finish();
