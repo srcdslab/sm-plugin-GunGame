@@ -381,6 +381,7 @@ int UTIL_ChangeLevel(int client, int difference, bool KnifeSteal = false, int vi
         /* Keep the last level during the winner forward so GG_GetRanking() is consistent. */
         PlayerLevel[client] = oldLevel;
         GameWinner = client;
+        g_GameWinnerLeft = false;
 
         Call_StartForward(FwdWinner);
         Call_PushCell(client);
@@ -1540,7 +1541,8 @@ void UTIL_EndMultiplayerGameNormal()
     UTIL_SetConVarIntByName("mp_maxrounds", 0);
     UTIL_SetConVarIntByName("mp_winlimit", 0);
 
-    if ( GameWinner && IsClientInGame(GameWinner) && GetClientTeam(GameWinner) == CS_TEAM_T )
+    int winner = UTIL_GetPresentWinner();
+    if ( winner && GetClientTeam(winner) == CS_TEAM_T )
     {
         CS_TerminateRound(0.1, CSRoundEnd_TerroristWin);
     }
@@ -1621,10 +1623,11 @@ void UTIL_ResetMatchKills()
  */
 public int UTIL_SortRanking(int elem1, int elem2, const int[] array, Handle hndl)
 {
-    if ( GameWinner )
+    int winner = UTIL_GetPresentWinner();
+    if ( winner )
     {
-        if ( elem1 == GameWinner ) return -1;
-        if ( elem2 == GameWinner ) return 1;
+        if ( elem1 == winner ) return -1;
+        if ( elem2 == winner ) return 1;
     }
     if ( PlayerLevel[elem1] != PlayerLevel[elem2] )
     {
@@ -1641,13 +1644,71 @@ public int UTIL_SortRanking(int elem1, int elem2, const int[] array, Handle hndl
     return elem1 < elem2 ? -1 : 1;
 }
 
+/**
+ * @return      The winner if he is still in game, 0 otherwise.
+ */
+int UTIL_GetPresentWinner()
+{
+    if ( !GameWinner || g_GameWinnerLeft || !IsClientInGame(GameWinner) )
+    {
+        return 0;
+    }
+    return GameWinner;
+}
+
+/**
+ * Resets the state of the running match (gg_restart). Levels, points, leader, winner, triggers
+ * (vote, disable RTV, friendly fire level), reconnect levels and handicap counters.
+ */
+void UTIL_ResetMatchState()
+{
+    for ( int i = 1; i <= MaxClients; i++ )
+    {
+        PlayerLevel[i] = 0;
+        CurrentKillsPerWeap[i] = 0;
+        CurrentLevelPerRound[i] = 0;
+        CurrentLevelPerRoundTriple[i] = 0;
+        PlayerState[i] &= ~GRENADE_LEVEL;
+        if ( IsClientInGame(i) )
+        {
+            if ( IsPlayerAlive(i) )
+            {
+                UTIL_StopTripleEffects(i);
+            }
+            UTIL_UpdatePlayerScoreLevel(i);
+        }
+    }
+    PlayerOnGrenade = 0;
+    CurrentLeader = 0;
+    GameWinner = 0;
+    g_GameWinnerLeft = false;
+    IsVotingCalled = false;
+    g_isCalledDisableRtv = false;
+    if ( g_isCalledEnableFriendlyFire && !FFA )
+    {
+        /* Back to the state before the EnableFriendlyFireLevel trigger. */
+        UTIL_ChangeFriendlyFire(!g_cfgFriendlyFireOnOff);
+    }
+    g_isCalledEnableFriendlyFire = false;
+
+    delete PlayerLevelsBeforeDisconnect;
+    PlayerLevelsBeforeDisconnect = new StringMap();
+    delete PlayerHandicapTimes;
+    PlayerHandicapTimes = new StringMap();
+
+    /* GG_OnMatchStart is called again on the next round start. */
+    g_MatchStarted = false;
+    UTIL_ResetMatchKills();
+}
+
 int UTIL_BuildRanking(int[] clients, int maxClients)
 {
     int list[MAXPLAYERS + 1];
     int count = 0;
+    int winner = UTIL_GetPresentWinner();
     for ( int i = 1; i <= MaxClients; i++ )
     {
-        if ( IsClientInGame(i) && (GetClientTeam(i) >= TEAM_T || i == GameWinner) )
+        if ( IsClientInGame(i) && (GetClientTeam(i) >= TEAM_T || i == winner) )
         {
             list[count++] = i;
         }

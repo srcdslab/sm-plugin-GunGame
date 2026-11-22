@@ -193,6 +193,7 @@ public void OnMapEnd()
     g_isCalledEnableFriendlyFire = false;
     g_isCalledDisableRtv = false;
     GameWinner = 0;
+    g_GameWinnerLeft = false;
     CurrentLeader = 0;
     g_MatchStarted = false;
     UTIL_ResetMatchKills();
@@ -214,6 +215,11 @@ public void OnClientDisconnect(int client)
 {
     /* The leaving player still holds his level here: FindLeader must skip him. */
     UTIL_LeaderLeft(client);
+
+    if ( client == GameWinner )
+    {
+        g_GameWinnerLeft = true;
+    }
 
     if ( AutoFriendlyFire && !FFA && (PlayerState[client] & GRENADE_LEVEL) )
     {
@@ -366,6 +372,7 @@ public void GG_OnShutdown(bool Command)
     g_isCalledEnableFriendlyFire = false;
     g_isCalledDisableRtv = false;
     GameWinner = 0;
+    g_GameWinnerLeft = false;
     CurrentLeader = 0;
     g_MatchStarted = false;
     UTIL_ResetMatchKills();

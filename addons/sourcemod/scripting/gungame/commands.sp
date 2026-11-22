@@ -132,17 +132,7 @@ public Action CmdReset(int client, int args)
     if(IsActive)
     {
         /* Reset the game and start over */
-        for(int i = 1; i <= MaxClients; i++)
-        {
-            PlayerLevel[i] = 0;
-            CurrentKillsPerWeap[i] = 0;
-            UTIL_UpdatePlayerScoreLevel(i);
-        }
-        CurrentLeader = 0;
-
-        /* GG_OnMatchStart is called again on the next round start. */
-        g_MatchStarted = false;
-        UTIL_ResetMatchKills();
+        UTIL_ResetMatchState();
 
         mp_restartgame.IntValue = 1;
     }

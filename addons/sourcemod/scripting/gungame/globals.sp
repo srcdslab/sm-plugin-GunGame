@@ -213,6 +213,8 @@ int CurrentLevelPerRound[MAXPLAYERS + 1];
 int CurrentLevelPerRoundTriple[MAXPLAYERS + 1];
 int CurrentLeader;
 int GameWinner;
+/* The winner left the server: GameWinner still blocks level changes, but his slot may be reused. */
+bool g_GameWinnerLeft;
 bool g_teamChange[MAXPLAYERS + 1];
 int g_NumberOfNades[MAXPLAYERS + 1];
 bool g_BlockSwitch[MAXPLAYERS + 1];
