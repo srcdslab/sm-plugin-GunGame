@@ -800,6 +800,37 @@ public void _HeExplode(Event event, const char[] name, bool dontBroadcast)
     }
 }
 
+/* The game gives its default items (or the map's game_player_equip) inside the player's Spawn:
+ * let them through, GunGame strips them at player_spawn anyway. */
+public Action OnPlayerSpawnPre(int client)
+{
+    g_AllowPickup[client] = true;
+    return Plugin_Continue;
+}
+
+public void OnPlayerSpawnPost(int client)
+{
+    g_AllowPickup[client] = false;
+}
+
+/* BlockWeaponPickup: only the weapons given by GunGame (GivePlayerItemWrapper) and the knife can be
+ * picked up. Weapons dropped by other players or placed by the map stay on the ground. */
+public Action OnWeaponCanUse(int client, int weapon)
+{
+    if ( !IsActive || !g_Cfg_BlockWeaponPickup || g_AllowPickup[client] )
+    {
+        return Plugin_Continue;
+    }
+
+    char classname[32];
+    if ( !GetEntityClassname(weapon, classname, sizeof(classname)) || StrEqual(classname, "weapon_knife") )
+    {
+        return Plugin_Continue;
+    }
+
+    return Plugin_Handled;
+}
+
 public Action OnWeaponSwitch(int client, int weapon)
 {
     if ( !IsActive )

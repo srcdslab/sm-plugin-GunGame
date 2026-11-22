@@ -3,6 +3,14 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.2
+
+### Added
+
+- `BlockWeaponPickup` config key (default `0`): players can only pick up the weapons GunGame
+  gives them and the knife. Weapons dropped by other players or placed by the map (fy/aim maps)
+  stay on the ground. The game's default spawn items still go through (GunGame strips them).
+
 ## 2.0.1
 
 ### Fixed

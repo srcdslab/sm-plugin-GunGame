@@ -260,6 +260,8 @@ public void GG_ConfigKeyValue(const char[] key, const char[] value)
                 g_Cfg_BlockWeaponSwitchOnNade = StringToInt(value) != 0;
             } else if ( strcmp("BlockWeaponSwitchIfKnife", key, false) == 0 ) {
                 g_Cfg_BlockWeaponSwitchIfKnife = StringToInt(value) != 0;
+            } else if ( strcmp("BlockWeaponPickup", key, false) == 0 ) {
+                g_Cfg_BlockWeaponPickup = StringToInt(value) != 0;
             } else if ( strcmp("EndGameSilent", key, false) == 0 ) {
                 g_Cfg_EndGameSilent = StringToInt(value);
             }

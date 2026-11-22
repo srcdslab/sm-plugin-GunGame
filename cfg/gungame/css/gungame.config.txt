@@ -111,6 +111,17 @@
          */
         "BlockWeaponSwitchOnNade" "1"
 
+        /**
+         * Players can only pick up the weapons GunGame gives them (and the knife).
+         * Weapons dropped by other players or placed by the map stay on the ground.
+         * Recommended with a deathmatch respawn plugin.
+         *
+         * Options:
+         *     1 - Block weapon pickup
+         *     0 - Do not block weapon pickup (default)
+         */
+        "BlockWeaponPickup" "0"
+
         /** 
          * Show players level message in hint box instead of chat.
          * If enabled then multikill chat messages will be shown 
