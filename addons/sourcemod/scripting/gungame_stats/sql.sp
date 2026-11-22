@@ -8,11 +8,12 @@
 
 void SqlConnect()
 {
-    if ( g_DbConnection != null )
+    if ( g_DbConnection != null || g_DbConnecting )
     {
         return;
     }
 
+    g_DbConnecting = true;
     Database.Connect(T_OnDatabaseConnect, SQL_CheckConfig("gungame") ? "gungame" : "storage-local");
 }
 
@@ -20,6 +21,7 @@ public void T_OnDatabaseConnect(Database db, const char[] error, any data)
 {
     if ( db == null )
     {
+        g_DbConnecting = false;
         SetFailState("Unable to connect to database (%s)", error);
         return;
     }
@@ -34,21 +36,22 @@ public void T_OnDatabaseConnect(Database db, const char[] error, any data)
         g_DbType = DbTypePgsql;
     } else {
         delete db;
+        g_DbConnecting = false;
         SetFailState("Unknown db type (%s)", ident);
         return;
     }
 
-    g_DbConnection = db;
+    g_DbPending = db;
 
     if ( g_DbType == DbTypeMysql )
     {
-        g_DbConnection.SetCharset("utf8");
+        g_DbPending.SetCharset("utf8");
     }
 
     #if defined SQL_DEBUG
         LogError("[DEBUG-SQL] %s", g_sql_checkTableExists[g_DbType]);
     #endif
-    g_DbConnection.Query(T_CheckTableExists, g_sql_checkTableExists[g_DbType]);
+    g_DbPending.Query(T_CheckTableExists, g_sql_checkTableExists[g_DbType]);
 }
 
 public void T_CheckTableExists(Database db, DBResultSet result, const char[] error, any data)
@@ -56,6 +59,8 @@ public void T_CheckTableExists(Database db, DBResultSet result, const char[] err
     if ( result == null )
     {
         LogError("Failed to check table exists (error: %s)", error);
+        delete g_DbPending;
+        g_DbConnecting = false;
         return;
     }
 
@@ -66,7 +71,7 @@ public void T_CheckTableExists(Database db, DBResultSet result, const char[] err
     }
 
     Transaction txn = CreatePlayerTableTransaction(false);
-    g_DbConnection.Execute(txn, T_CreateTableSuccess, T_CreateTableFailure);
+    g_DbPending.Execute(txn, T_CreateTableSuccess, T_CreateTableFailure);
 }
 
 /**
@@ -99,6 +104,8 @@ public void T_CreateTableSuccess(Database db, any data, int numQueries, DBResult
 public void T_CreateTableFailure(Database db, any data, int numQueries, const char[] error, int failIndex, any[] queryData)
 {
     LogError("Could not create players table (query %d, error: %s)", failIndex, error);
+    delete g_DbPending;
+    g_DbConnecting = false;
 }
 
 /**
@@ -106,6 +113,13 @@ public void T_CreateTableFailure(Database db, any data, int numQueries, const ch
  */
 void OnDatabaseReady()
 {
+    if ( g_DbPending != null )
+    {
+        g_DbConnection = g_DbPending;
+        g_DbPending = null;
+    }
+    g_DbConnecting = false;
+
     LoadRank();
 
     /* Players already on the server (late load or connection slower than them). */
@@ -139,6 +153,7 @@ void SavePlayerData(int client)
         return;
     }
     GetClientName(client, name, sizeof(name));
+    StripFourByteUtf8(name);
 
     char query[1024];
     Transaction txn = new Transaction();
@@ -321,6 +336,12 @@ public void T_SavePlayerDataInfo(Database db, DBResultSet result, const char[] e
     if ( result == null )
     {
         LogError("Could not prune players (error: %s)", error);
+        return;
+    }
+    /* Total winners, places and the top rank threshold change with the deleted rows. */
+    if ( result.AffectedRows > 0 )
+    {
+        LoadRank();
     }
 }
 
@@ -710,4 +731,23 @@ bool IsPlayerInTopRank(int client)
         return false;
     }
     return PlayerWinsData[client] >= g_cfgHandicapTopWins;
+}
+
+/**
+ * Removes 4-byte UTF-8 characters (emoji...) from a name: a MySQL utf8 (3 bytes) table rejects them
+ * in strict mode, the save transaction then fails and the win is lost.
+ */
+void StripFourByteUtf8(char[] name)
+{
+    int r = 0, w = 0;
+    while ( name[r] )
+    {
+        if ( (name[r] & 0xF8) == 0xF0 )
+        {
+            r += 4;
+            continue;
+        }
+        name[w++] = name[r++];
+    }
+    name[w] = '\0';
 }

@@ -33,6 +33,10 @@ enum DbType
 
 DbType g_DbType;
 Database g_DbConnection;
+/* Connection being set up: g_DbConnection is only set once the table exists, so no query runs
+ * against a missing table on a fresh database. */
+Database g_DbPending;
+bool g_DbConnecting;
 
 char g_sql_createPlayerTable[MaxDbTypes][]   =
 {
@@ -79,7 +83,8 @@ char g_sql_getPlayerPlaceByWins[] = "SELECT count(*) FROM gungame_playerdata WHE
 char g_sql_getPlayersCount[]      = "SELECT count(*) FROM gungame_playerdata;";
 char g_sql_getPlayerByAuth[]      = "SELECT id, wins, name FROM gungame_playerdata WHERE authid = '%s';";
 char g_sql_updatePlayerTsById[]   = "UPDATE gungame_playerdata SET timestamp = current_timestamp WHERE id = %d;";
-char g_sql_getTopPlayers[]        = "SELECT id, wins, name, authid FROM gungame_playerdata ORDER by wins desc, id LIMIT %d OFFSET %d;";
+/* place = players with more wins + 1, the same rule as GG_GetPlayerPlaceInStat (ties share a place). */
+char g_sql_getTopPlayers[]        = "SELECT id, wins, name, authid, (SELECT count(*) FROM gungame_playerdata p2 WHERE p2.wins > p.wins) + 1 FROM gungame_playerdata p ORDER by wins desc, id LIMIT %d OFFSET %d;";
 
 /**
  * SQLite stores current_timestamp as 'YYYY-MM-DD HH:MM:SS' text (UTC): compare it with datetime(),

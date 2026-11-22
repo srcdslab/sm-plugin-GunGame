@@ -3,6 +3,19 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.14
+
+### Fixed
+
+- gungame_stats: rank data (total winners, top rank threshold, places) is reloaded after the
+  end-of-map prune deleted players (#16).
+- `!top` numbered tied players 3, 4 while `!rank` said both were 3rd: the top panel now shows the
+  same shared place (#16).
+- The database handle was used before the players table existed on a fresh database; a failed table
+  creation left every later query failing (#16).
+- Names with emoji (4-byte UTF-8) made the save fail on a MySQL utf8 table and the win was lost:
+  those characters are removed from the stored name (#16).
+
 ## 2.0.13
 
 ### Fixed

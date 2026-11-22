@@ -65,20 +65,26 @@ public void T_DisplayTopMenu(Database db, DBResultSet result, const char[] error
 
         int i = offset;
         char name[MAX_NAME_SIZE], subtext[64];
-        int wins;
+        int wins, place;
+        bool numberedItems = true;
         while ( result.FetchRow() )
         {
             wins = result.FetchInt(1);
             result.FetchString(2, name, sizeof(name));
+            place = result.FetchInt(4);
             FormatLanguageNumberTextEx(client, subtext, sizeof(subtext), wins, "wins");
-            if ( ++i < 4 )
+            /* The first three rows are menu items numbered 1-3 by the panel: only while no tie
+             * changed a place, else every row shows its place as text. */
+            i++;
+            if ( numberedItems && i < 4 && place == i )
             {
                 Format(text, sizeof(text), "%t", "TopPanel: Name Wins", name, subtext);
                 menu.DrawItem(text);
             }
             else
             {
-                Format(text, sizeof(text), "%t", "TopPanel: Place Name Wins", i, name, subtext);
+                numberedItems = false;
+                Format(text, sizeof(text), "%t", "TopPanel: Place Name Wins", place, name, subtext);
                 menu.DrawText(text);
             }
         }
