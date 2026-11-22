@@ -14,26 +14,37 @@ void UTIL_FindMapObjective()
 
 void UTIL_ConvertWeaponToIndex()
 {
+    /* Levels with no weapon (gap) or an unknown weapon are removed: nobody could pass them. */
+    int count = 0;
     for ( int i = 0, b; i < WeaponOrderCount; i++ )
     {
-        /**
-         * Found empty weapon name
-         * Probably no more weapons since this one is empty.
-         */
-        if ( !WeaponOrderName[i][0] )
-        {
-            break;
-        }
-
         UTIL_StringToLower(WeaponOrderName[i]);
 
+        if ( !WeaponOrderName[i][0] )
+        {
+            LogError("[GunGame] Weapon Order has no weapon for level %d, level removed", i + 1);
+            continue;
+        }
         if ( !(b = UTIL_GetWeaponIndex(WeaponOrderName[i])) )
         {
-            LogMessage("[GunGame] *** FATAL ERROR *** Weapon Order has an invalid entry :: name %s :: level %d", WeaponOrderName[i], i + 1);
+            LogError("[GunGame] Weapon Order has an invalid entry :: name %s :: level %d, level removed", WeaponOrderName[i], i + 1);
+            continue;
         }
 
-        WeaponOrderId[i] = b;
+        if ( count != i )
+        {
+            strcopy(WeaponOrderName[count], sizeof(WeaponOrderName[]), WeaponOrderName[i]);
+            CustomKillPerLevel[count] = CustomKillPerLevel[i];
+        }
+        WeaponOrderId[count++] = b;
     }
+    for ( int i = count; i < WeaponOrderCount; i++ )
+    {
+        WeaponOrderName[i][0] = '\0';
+        WeaponOrderId[i] = 0;
+        CustomKillPerLevel[i] = 0;
+    }
+    WeaponOrderCount = count;
 }
 
 void UTIL_PrintToUpperLeft(int r, int g, int b, const char[] source, any ...)
@@ -61,8 +72,13 @@ void UTIL_PrintToUpperLeft(int r, int g, int b, const char[] source, any ...)
 
 /* Weapon Index Lookup via Trie array.
  * quiet: do not log unknown names (player_death reports map entities such as env_explosion). */
-int UTIL_GetWeaponIndex(const char[] Weapon, bool quiet = false)
+int UTIL_GetWeaponIndex(const char[] WeaponName, bool quiet = false)
 {
+    /* Config values may be mixed case ("Glock"), the trie keys are lower case. */
+    char Weapon[MAX_WEAPON_NAME_SIZE];
+    strcopy(Weapon, sizeof(Weapon), WeaponName);
+    UTIL_StringToLower(Weapon);
+
     if ( !WeaponOpen )
     {
         // weaponinfo file not loaded
@@ -351,7 +367,7 @@ int UTIL_ChangeLevel(int client, int difference, bool KnifeSteal = false, int vi
         Call_Finish();
     }
 
-    if ( g_cfgDisableRtvLevel && !g_isCalledDisableRtv && Level >= g_cfgDisableRtvLevel )
+    if ( g_cfgDisableRtvLevel && !g_isCalledDisableRtv && Level >= g_cfgDisableRtvLevel - 1 )
     {
         g_isCalledDisableRtv = true;
         Call_StartForward(FwdDisableRtv);
@@ -359,7 +375,7 @@ int UTIL_ChangeLevel(int client, int difference, bool KnifeSteal = false, int vi
     }
 
     /* FFA: friendly fire must stay on, never toggle it. */
-    if ( !FFA && g_cfgEnableFriendlyFireLevel && !g_isCalledEnableFriendlyFire && Level >= g_cfgEnableFriendlyFireLevel )
+    if ( !FFA && g_cfgEnableFriendlyFireLevel && !g_isCalledEnableFriendlyFire && Level >= g_cfgEnableFriendlyFireLevel - 1 )
     {
         g_isCalledEnableFriendlyFire = true;
         UTIL_ChangeFriendlyFire(g_cfgFriendlyFireOnOff);
@@ -1232,8 +1248,8 @@ int UTIL_GetHandicapLevel(int skipClient = 0, int aboveLevel = -1)
         return 0;
     }
     level -= g_Cfg_HandicapLevelSubstract;
-    if ( g_Cfg_MaxHandicapLevel && g_Cfg_MaxHandicapLevel < level ) {
-        level = g_Cfg_MaxHandicapLevel;
+    if ( g_Cfg_MaxHandicapLevel && g_Cfg_MaxHandicapLevel - 1 < level ) {
+        level = g_Cfg_MaxHandicapLevel - 1;
     }
     if ( level < 1 ) {
         return 0;

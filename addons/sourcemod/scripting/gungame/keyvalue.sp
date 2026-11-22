@@ -20,7 +20,7 @@ void OnKeyValueStart()
     if ( !WeaponOpen || !KvWeapon.GotoFirstSubKey() )
     {
         delete KvWeapon;
-        return;
+        SetFailState("FATAL ERROR Cannot read the weapons of [%s]", WeaponFile);
     }
 
     char name[MAX_WEAPON_NAME_LEN];

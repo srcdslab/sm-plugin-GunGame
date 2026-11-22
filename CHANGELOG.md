@@ -3,6 +3,28 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.12
+
+### Fixed
+
+- Empty config values (`"NadeBonus" ""`, `"WarmupWeapon" ""`, `"GameDesc" ""`, a sound set to `""`)
+  were never passed on by gungame_config, so they could not reset what a map config had set on an
+  earlier map (#14).
+- `WeaponOrder` and `MultipleKillsPerLevel` sections now start from scratch: per-level kill counts,
+  reserved random levels and weapon names of an earlier map no longer leak into the next maps.
+  The level count is the highest level read, not the last one (#14).
+- `RandomWeaponOrder` put kill counts on the wrong weapons (the shuffle did not match its map) (#14).
+- `RandomWeaponReserveLevels`: no more out-of-bounds index for 0 or levels above 64, no truncated
+  numbers, spaces allowed (#14).
+- `WarmupRandomWeaponMode` 2 (every round) and 3 (every spawn) behaved like 1 (#14).
+- `DisableRtvLevel`, `EnableFriendlyFireLevel` and `MaxHandicapLevel` set to `1` meant "disabled" (#14).
+- Weapon order levels with no weapon or an unknown weapon are removed (logged) instead of leaving a
+  level nobody can pass; weapon names are case-insensitive everywhere (#14).
+- A missing or broken `weaponinfo.txt` stops the plugin with a clear error; config parse errors go to
+  the error log with the line, and a config file that cannot be opened no longer keeps GunGame off
+  for the whole map (#14).
+- Sound lists can hold 32 sounds (#14).
+
 ## 2.0.11
 
 ### Fixed

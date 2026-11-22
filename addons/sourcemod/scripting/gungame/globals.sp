@@ -89,7 +89,6 @@ bool g_BlockFastSwitchOnChange[MAXPLAYERS+1]    = {false, ...};
  */
 
 State ConfigState;
-bool ConfigReset;
 
 int MapStatus;
 int MaxLevelPerRound = 0;
