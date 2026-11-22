@@ -98,6 +98,21 @@ public int __SetMaxLevel(Handle plugin, int numParams)
         WeaponOrderName[i][0] = '\0';
         WeaponOrderId[i] = 0;
     }
+    UTIL_UpdateWeaponLevelPages();
+
+    /* Players above the new maximum go to the new last level. */
+    for ( int i = 1; i <= MaxClients; i++ )
+    {
+        if ( PlayerLevel[i] >= WeaponOrderCount )
+        {
+            PlayerLevel[i] = WeaponOrderCount - 1;
+            CurrentKillsPerWeap[i] = 0;
+            if ( IsClientInGame(i) )
+            {
+                UTIL_UpdatePlayerScoreLevel(i);
+            }
+        }
+    }
 
     return 1;
 }
@@ -163,6 +178,10 @@ public int __GiveHandicapLevel(Handle plugin, int numParams)
     {
         return 0;
     }
+    if ( !IsClientConnected(client) )
+    {
+        return ThrowNativeError(SP_ERROR_NATIVE, "Client is not connected [%d]", client);
+    }
 
     return GiveHandicapLevel(client) ? 1 : 0;
 }
@@ -173,6 +192,15 @@ public int __RemoveLevelMulti(Handle plugin, int numParams)
     int loose = GetNativeCell(2);
 
     if ( !CheckNativeClient(client) )
+    {
+        return 0;
+    }
+    /* A negative count would add levels (and could make a player win through a team kill). */
+    if ( loose < 0 )
+    {
+        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid level count [%d]", loose);
+    }
+    if ( !loose )
     {
         return 0;
     }
@@ -243,14 +271,14 @@ public int __AddALevel(Handle plugin, int numParams)
         return 0;
     }
 
-    CurrentLevelPerRound[client]++;
-
     int oldLevel = PlayerLevel[client];
     int level = UTIL_ChangeLevel(client, 1, false, 0, GGLevelReason_Native);
     if ( level == oldLevel )
     {
         return 0;
     }
+    /* Only a level really gained counts for MaxLevelPerRound. */
+    CurrentLevelPerRound[client]++;
 
     if ( TurboMode )
     {
@@ -274,7 +302,13 @@ public int __IsClientCurrentWeapon(Handle plugin, int numParams)
     char Weapon[MAX_WEAPON_NAME_SIZE];
     GetNativeString(2, Weapon, sizeof(Weapon));
 
-    return strcmp(Weapon, g_WeaponName[WeaponOrderId[PlayerLevel[client]]], false) == 0;
+    if ( PlayerLevel[client] >= WeaponOrderCount )
+    {
+        return 0;
+    }
+    /* Short (glock) or full (weapon_glock) name. */
+    int weap = UTIL_GetWeaponIndex(Weapon, true);
+    return weap && weap == WeaponOrderId[PlayerLevel[client]];
 }
 
 public int __GetClientLevel(Handle plugin, int numParams)
@@ -319,7 +353,9 @@ public int __AddAPoint(Handle plugin, int numParams)
     int level = UTIL_ChangeLevel(client, 1, false, 0, GGLevelReason_Native);
     if ( level == oldLevel )
     {
-        return 0;
+        /* Level change refused (forward, bot on the last level...): stay one point below. */
+        CurrentKillsPerWeap[client] = UTIL_GetCustomKillPerLevel(oldLevel) - 1;
+        return CurrentKillsPerWeap[client];
     }
     CurrentLevelPerRound[client]++;
 
@@ -398,7 +434,8 @@ public int __SetWeaponLevel(Handle plugin, int numParams)
 {
     int level = GetNativeCell(1);
 
-    if ( level < 1 || level > GUNGAME_MAX_LEVEL )
+    /* An existing level, or the next one (no gap in the weapon order). */
+    if ( level < 1 || level > GUNGAME_MAX_LEVEL || level > WeaponOrderCount + 1 )
     {
         return ThrowNativeError(SP_ERROR_NATIVE, "Level out of range [%d]", level);
     }
@@ -413,6 +450,11 @@ public int __SetWeaponLevel(Handle plugin, int numParams)
     /* WeaponOrderName holds short names (without "weapon_"). */
     strcopy(WeaponOrderName[level - 1], sizeof(WeaponOrderName[]), g_WeaponName[weap][7]);
     WeaponOrderId[level - 1] = weap;
+    if ( level > WeaponOrderCount )
+    {
+        WeaponOrderCount = level;
+        UTIL_UpdateWeaponLevelPages();
+    }
 
     return 1;
 }
@@ -421,7 +463,7 @@ public int __SetWeaponLevelByName(Handle plugin, int numParams)
 {
     int level = GetNativeCell(1);
 
-    if ( level < 1 || level > GUNGAME_MAX_LEVEL )
+    if ( level < 1 || level > GUNGAME_MAX_LEVEL || level > WeaponOrderCount + 1 )
     {
         return ThrowNativeError(SP_ERROR_NATIVE, "Level out of range [%d]", level);
     }
@@ -439,6 +481,11 @@ public int __SetWeaponLevelByName(Handle plugin, int numParams)
     /* WeaponOrderName holds short names (without "weapon_"). */
     strcopy(WeaponOrderName[level - 1], sizeof(WeaponOrderName[]), g_WeaponName[weap][7]);
     WeaponOrderId[level - 1] = weap;
+    if ( level > WeaponOrderCount )
+    {
+        WeaponOrderCount = level;
+        UTIL_UpdateWeaponLevelPages();
+    }
 
     return 1;
 }

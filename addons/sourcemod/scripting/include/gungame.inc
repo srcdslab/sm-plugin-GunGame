@@ -230,7 +230,7 @@ native int GG_RemoveALevel(int client);
  * This also obeys the max level per round.
  *
  * @param client        Player index.
- * @param level         Levels to loose.
+ * @param level         Levels to loose (0 or more, a negative count throws an error).
  * @return              Number of levels actually lost.
  */
 native int GG_RemoveLevelMulti(int client, int level);
@@ -277,7 +277,7 @@ native int GG_GetClientMaxPointLevel(int client);
  * Checks if the given weapon is the weapon of the client current level.
  *
  * @param client        Player index.
- * @param weapon        Full weapon name (ie weapon_glock).
+ * @param weapon        Weapon name, short (glock) or full (weapon_glock).
  * @return              True if it is the client level weapon.
  */
 native bool GG_IsClientCurrentWeapon(int client, const char[] weapon);
@@ -285,7 +285,8 @@ native bool GG_IsClientCurrentWeapon(int client, const char[] weapon);
 /**
  * Set the level weapon by weapon index.
  *
- * @param level         The weapon level (starting from 1)
+ * @param level         The weapon level (starting from 1), an existing level or the next one
+ *                      (GG_GetMaxLevel() + 1, which adds a level).
  * @param weapon        The weapon index
  * @return              1 on success.
  */
