@@ -104,6 +104,11 @@ public void _PlayerTeam(Event event, const char[] name, bool dontBroadcast)
     }
 
     int client = GetClientOfUserId(event.GetInt("userid"));
+    /* A leader moving to spectator gives the lead away (disconnects are handled in OnClientDisconnect). */
+    if ( client && !disconnect && newTeam < TEAM_T )
+    {
+        UTIL_LeaderLeft(client);
+    }
     if ( client && !disconnect && (oldTeam >= TEAM_T) && IsClientInGame(client) && IsPlayerAlive(client) )
     {
         UTIL_StopTripleEffects(client);

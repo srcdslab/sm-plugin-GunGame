@@ -157,9 +157,10 @@ void UTIL_RecalculateLeader(int client, int oldLevel, int newLevel)
         {
             // was the leader
             CurrentLeader = FindLeader();
-            if ( CurrentLeader != client )
+            if ( CurrentLeader && CurrentLeader != client )
             {
-                UTIL_CallLeaderForward(newLevel);
+                /* The new leader's level, not the old leader's new level. */
+                UTIL_CallLeaderForward(PlayerLevel[CurrentLeader]);
                 UTIL_PlaySoundForLeaderLevel();
             }
             return;
@@ -198,6 +199,22 @@ void UTIL_RecalculateLeader(int client, int oldLevel, int newLevel)
     // new level == leader level
     // tied to the lead
     UTIL_PlaySoundForLeaderLevel();
+}
+
+/**
+ * The leader leaves the game (disconnect, spectator): give the lead to the best remaining player.
+ */
+void UTIL_LeaderLeft(int client)
+{
+    if ( CurrentLeader != client )
+    {
+        return;
+    }
+    CurrentLeader = FindLeader(false, client);
+    if ( CurrentLeader )
+    {
+        UTIL_CallLeaderForward(PlayerLevel[CurrentLeader]);
+    }
 }
 
 void UTIL_PlaySoundForLeaderLevel()
@@ -887,7 +904,12 @@ void UTIL_StopTripleEffects(int client)
  * @param DisallowBot
  * @return              The leader, 0 if no leaders found.
  */
-int FindLeader(bool DisallowBot = false)
+/**
+ * @param DisallowBot   Skip bots.
+ * @param skip          Client to ignore (a leaving leader still holds his level).
+ * @return              The in-game T/CT player with the highest level (first one on ties), 0 if none.
+ */
+int FindLeader(bool DisallowBot = false, int skip = 0)
 {
     int leaderId      = 0;
     int leaderLevel   = 0;
@@ -895,7 +917,11 @@ int FindLeader(bool DisallowBot = false)
 
     for ( int i = 1; i <= MaxClients; i++ )
     {
-        if ( DisallowBot && IsClientInGame(i) && IsFakeClient(i) )
+        if ( i == skip || !IsClientInGame(i) || GetClientTeam(i) < TEAM_T )
+        {
+            continue;
+        }
+        if ( DisallowBot && IsFakeClient(i) )
         {
             continue;
         }

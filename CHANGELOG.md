@@ -3,6 +3,17 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.7
+
+### Fixed
+
+- When the leader disconnected, the leader was recalculated while the leaving player still held his
+  level, so nobody led any more and the next player gaining any level was announced as the leader.
+  The lead now goes to the best remaining player, also when the leader moves to spectator (#9).
+- `GG_OnLeaderChange` got the old leader's new level instead of the new leader's level (#9).
+- Handicap level raises recalculate the leader (#9).
+- Spectators and unassigned players can no longer be the leader (#9).
+
 ## 2.0.6
 
 ### Fixed

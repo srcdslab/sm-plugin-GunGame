@@ -209,15 +209,8 @@ public void OnMapEnd()
 
 public void OnClientDisconnect(int client)
 {
-    /* Clear current leader if player is leader */
-    if ( CurrentLeader == client )
-    {
-        UTIL_RecalculateLeader(client, PlayerLevel[client], 0);
-        if ( CurrentLeader == client )
-        {
-            CurrentLeader = 0;
-        }
-    }
+    /* The leaving player still holds his level here: FindLeader must skip him. */
+    UTIL_LeaderLeft(client);
 
     if ( AutoFriendlyFire && !FFA && (PlayerState[client] & GRENADE_LEVEL) )
     {
@@ -577,6 +570,7 @@ public Action Timer_HandicapUpdate(Handle timer)
                 UTIL_GiveNextWeapon(i, level);
             }
             UTIL_UpdatePlayerScoreLevel(i);
+            UTIL_RecalculateLeader(i, oldLevel, level);
             UTIL_FireLevelChanged(i, oldLevel, level, GGLevelReason_Handicap);
         }
     }

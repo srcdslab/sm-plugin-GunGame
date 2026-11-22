@@ -147,6 +147,7 @@ bool GiveHandicapLevel(int client)
         PlayerLevel[client] = level;
         CurrentKillsPerWeap[client] = 0;
         UTIL_UpdatePlayerScoreLevel(client);
+        UTIL_RecalculateLeader(client, oldLevel, level);
         UTIL_FireLevelChanged(client, oldLevel, level, GGLevelReason_Handicap);
         return true;
     }
