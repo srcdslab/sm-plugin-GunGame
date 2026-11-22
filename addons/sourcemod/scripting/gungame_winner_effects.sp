@@ -29,7 +29,7 @@ public Plugin myinfo = {
 State g_ConfigState         = CONFIG_STATE_NONE;
 int g_Cfg_WinnerEffect      = 0;
 int g_GlowSprite            = -1;
-int g_winner                = 0;
+int g_winner                = 0; /* userid */
 
 /*----------------------------------------------------------------------+
 | LOAD CONFIG                                                           |
@@ -76,11 +76,13 @@ public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast
     }
 
     int client = GetClientOfUserId(event.GetInt("userid"));
-    if ( !client ) {
+    /* A userid: a new player in the winner's slot must not get his effects. */
+    int winner = GetClientOfUserId(g_winner);
+    if ( !client || !winner ) {
         return;
     }
 
-    WinnerEffectsStartOne(g_winner, client);
+    WinnerEffectsStartOne(winner, client);
 }
 
 /*----------------------------------------------------------------------+
@@ -97,7 +99,7 @@ public void GG_OnWinner(int client, const char[] Weapon, int victim)
         return;
     }
 
-    g_winner = client;
+    g_winner = GetClientUserId(client);
     WinnerEffectsStart(client);
 }
 

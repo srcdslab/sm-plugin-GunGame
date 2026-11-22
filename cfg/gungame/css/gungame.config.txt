@@ -605,8 +605,9 @@
         /* Display winner in MOTD window. */
         "DisplayWinnerMotd" "0"
 
-        /* URL to display in MOTD window. */
-        "DisplayWinnerUrl" "http://otstrel.ru/gg5_win.php"
+        /* URL to display in MOTD window (empty = no MOTD). The page gets winnerName, loserName,
+         * wins, place and totalPlaces; the whole URL must stay under 240 bytes. */
+        "DisplayWinnerUrl" ""
 
         /* Show player rank on win in chat */
         "ShowPlayerRankOnWin" "1"

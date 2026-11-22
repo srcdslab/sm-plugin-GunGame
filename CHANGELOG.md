@@ -3,6 +3,19 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.15
+
+### Fixed
+
+- The winner's rank (`ShowPlayerRankOnWin`) and MOTD were never shown when the win was not saved
+  (`DontAddWinsOnBot` and a bot victim, no database, failed save): gungame_stats now always fires
+  `GG_OnLoadRank` after a win, and gungame_display_winner shows them after 5 s at the latest (#17).
+- Winner MOTD: the loser is the victim of the winning kill (it could be a stale name), names are cut
+  to 32 bytes on a character boundary, a URL over 240 bytes is not sent (CS:S drops it) and logged,
+  and the default `DisplayWinnerUrl` is empty instead of a third-party http site (#17).
+- gungame_winner_effects stored the winner's client index: a player joining in his slot after he
+  left got the winner glow (#17).
+
 ## 2.0.14
 
 ### Fixed
