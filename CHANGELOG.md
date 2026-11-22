@@ -52,6 +52,8 @@ Fork of [altexdim/sourcemod-plugin-gungame](https://github.com/altexdim/sourcemo
 
 ### Fixed
 
+- gungame_logging: a level down logged one `gg_leveldown` event too many (2 for 1 level),
+  so stats plugins (HLstatsX) counted every level lost twice.
 - gungame_config: the `GG_ConfigParseEnd` forward was registered as `GG_COnfigParseEnd`
   and never called.
 - gungame_stats: SQLite prune compared a text timestamp with a unix time and never

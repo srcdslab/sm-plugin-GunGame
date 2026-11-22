@@ -82,7 +82,7 @@ public Action GG_OnClientLevelChange(int client, int level, int difference, bool
     }
     else
     {
-        LogEventToGame("gg_leveldown", client);
+        /* One event per level lost (upstream logged one extra event, so stats counted -1 as -2). */
         for ( int i = difference; i < 0; i++ ) {
             LogEventToGame("gg_leveldown", client);
         }
