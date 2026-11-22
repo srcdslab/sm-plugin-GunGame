@@ -3,6 +3,14 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.3
+
+### Fixed
+
+- `UnlimitedNadesMinPlayers` turned `UnlimitedNades` off at every team change when both teams had
+  more players than the limit, even with `"UnlimitedNades" "1"`: no new grenade after a throw on the
+  grenade level. As documented in `gungame.config.txt`, it now only turns unlimited nades on.
+
 ## 2.0.2
 
 ### Added

@@ -99,7 +99,8 @@ public void _PlayerTeam(Event event, const char[] name, bool dontBroadcast)
 
     if ( UnlimitedNadesMinPlayers )
     {
-        UnlimitedNades = ( Tcount <= UnlimitedNadesMinPlayers || CTcount <= UnlimitedNadesMinPlayers );
+        UnlimitedNades = g_Cfg_UnlimitedNades
+                         || Tcount <= UnlimitedNadesMinPlayers || CTcount <= UnlimitedNadesMinPlayers;
     }
 
     int client = GetClientOfUserId(event.GetInt("userid"));

@@ -209,7 +209,8 @@ public void GG_ConfigKeyValue(const char[] key, const char[] value)
             } else if(strcmp("ExtraNade", key, false) == 0) {
                 g_Cfg_ExtraNade = StringToInt(value);
             } else if(strcmp("UnlimitedNades", key, false) == 0) {
-                UnlimitedNades = StringToInt(value) != 0;
+                g_Cfg_UnlimitedNades = StringToInt(value) != 0;
+                UnlimitedNades = g_Cfg_UnlimitedNades;
             } else if(strcmp("WarmupNades", key, false) == 0) {
                 WarmupNades = StringToInt(value) != 0;
             } else if(strcmp("MultiLevelBonus", key, false) == 0) {

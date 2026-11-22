@@ -109,6 +109,8 @@ bool NadeSmoke;
 bool NadeFlash;
 int g_Cfg_ExtraNade;
 bool UnlimitedNades;
+/* UnlimitedNades as read from the config: UnlimitedNadesMinPlayers can only turn it on, never off. */
+bool g_Cfg_UnlimitedNades;
 bool WarmupNades;
 bool KnifePro;
 int KnifeProMinLevel;
