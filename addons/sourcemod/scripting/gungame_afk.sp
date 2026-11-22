@@ -34,9 +34,28 @@ public Plugin myinfo =
     url = GUNGAME_URL
 };
 
+bool g_LateLoad;
+
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+    g_LateLoad = late;
+    return APLRes_Success;
+}
+
 public void OnPluginStart()
 {
     LoadTranslations("gungame_afk.phrases");
+}
+
+/* Reloaded mid-map: GG_OnStartup was fired before we were loaded. Config values come back at the
+ * next map change. */
+public void OnAllPluginsLoaded()
+{
+    ConVar enabled = FindConVar("gungame_enabled");
+    if ( g_LateLoad && enabled != null && enabled.BoolValue )
+    {
+        GG_OnStartup(false);
+    }
 }
 
 public void GG_OnStartup(bool Command)

@@ -22,8 +22,11 @@ public Plugin myinfo =
     url = GUNGAME_URL
 };
 
+bool g_LateLoad;
+
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
+    g_LateLoad = late;
     RegPluginLibrary("gungame_st");
     OnCreateNatives();
     return APLRes_Success;
@@ -45,6 +48,17 @@ public void OnPluginStart()
     RegAdminCmd("gg_importdb", _CmdImportDb, GUNGAME_ADMINFLAG, "Imports the winners from gungame players data file into database.");
 
     SqlConnect();
+}
+
+/* Reloaded mid-map: GG_OnStartup was fired before we were loaded. Config values come back at the
+ * next map change. */
+public void OnAllPluginsLoaded()
+{
+    ConVar enabled = FindConVar("gungame_enabled");
+    if ( g_LateLoad && enabled != null && enabled.BoolValue )
+    {
+        GG_OnStartup(false);
+    }
 }
 
 public void OnClientAuthorized(int client, const char[] auth)

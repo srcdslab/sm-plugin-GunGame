@@ -3,6 +3,19 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.16
+
+### Fixed
+
+- `gungame.mapconfig.cfg` could be skipped on the first map after a server start (it depended on
+  the plugin load order); it now runs when the config is read, before the warmup configs (#18).
+- gungame_warmup_configs and gungame_mapvoting append their `exec` (`ServerCommand`): with
+  `InsertServerCommand` the warmup start config ran before configs queued earlier, which then
+  overrode it (#18).
+- Unloading gungame.smx mid-map gives the buy zones back (#18).
+- gungame_stats and gungame_afk reloaded mid-map start again instead of staying off until the next
+  map; README: reload GunGame itself with a map change (#18).
+
 ## 2.0.15
 
 ### Fixed

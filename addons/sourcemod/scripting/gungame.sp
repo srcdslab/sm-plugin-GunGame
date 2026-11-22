@@ -178,6 +178,11 @@ public void OnClientPostAdminCheck(int client)
 public void OnPluginEnd()
 {
     gungame_enabled.IntValue = 0;
+    /* Unloaded mid-map: give the buy zones back, players would keep their spawn pistols for ever. */
+    if ( IsActive )
+    {
+        UTIL_EnableBuyZones();
+    }
 }
 
 public void OnMapEnd()
