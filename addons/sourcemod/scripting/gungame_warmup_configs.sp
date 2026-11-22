@@ -14,16 +14,18 @@ public Plugin myinfo = {
     url = GUNGAME_URL
 };
 
+/* ServerCommand appends: InsertServerCommand ran these cfgs before commands queued earlier
+ * in the same frame (the map config), which then overrode them. */
 public void GG_OnWarmupEnd()
 {
     char ConfigGameDirName[PLATFORM_MAX_PATH];
     GG_ConfigGetDir(ConfigGameDirName, sizeof(ConfigGameDirName));
-    InsertServerCommand("exec %s/gungame.warmupend.cfg", ConfigGameDirName);
+    ServerCommand("exec %s/gungame.warmupend.cfg", ConfigGameDirName);
 }
 
 public void GG_OnWarmupStart()
 {
     char ConfigGameDirName[PLATFORM_MAX_PATH];
     GG_ConfigGetDir(ConfigGameDirName, sizeof(ConfigGameDirName));
-    InsertServerCommand("exec %s/gungame.warmupstart.cfg", ConfigGameDirName);
+    ServerCommand("exec %s/gungame.warmupstart.cfg", ConfigGameDirName);
 }

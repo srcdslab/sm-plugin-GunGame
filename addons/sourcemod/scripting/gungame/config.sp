@@ -442,6 +442,14 @@ public void GG_ConfigEnd()
     {
         gungame_enabled.IntValue = 1;
 
+        /* Here and not in OnConfigsExecuted: IsActive is only known once the config is read,
+         * which depends on the plugin load order on the first map. Appended (ServerCommand) so it
+         * runs after the server and map configs, and queued before GG_OnStartup so the warmup
+         * start config (queued by the warmup start) runs after it. */
+        char ConfigGameDirName[PLATFORM_MAX_PATH];
+        GG_ConfigGetDir(ConfigGameDirName, sizeof(ConfigGameDirName));
+        ServerCommand("exec %s/gungame.mapconfig.cfg", ConfigGameDirName);
+
         Call_StartForward(FwdStart);
         Call_PushCell(false);
         Call_Finish();
@@ -451,16 +459,6 @@ public void GG_ConfigEnd()
         Call_StartForward(FwdShutdown);
         Call_PushCell(false);
         Call_Finish();
-    }
-}
-
-public void OnConfigsExecuted()
-{
-    if(IsActive)
-    {
-        char ConfigGameDirName[PLATFORM_MAX_PATH];
-        GG_ConfigGetDir(ConfigGameDirName, sizeof(ConfigGameDirName));
-        InsertServerCommand("exec %s/gungame.mapconfig.cfg", ConfigGameDirName);
     }
 }
 
