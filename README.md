@@ -60,7 +60,7 @@ for your SourceMod version and extract it in `cstrike/`:
 
 | Cvar | Default | Description |
 | --- | --- | --- |
-| `sm_gungamesm_version` | `2.0.0` | Version (read only). |
+| `sm_gungamesm_version` | `2.0.1` | Version (read only). |
 | `gungame_enabled` | `1` | Shows if GunGame is enabled (set by the plugin, use `gg_enable`/`gg_disable`). |
 | `sm_gg_cfgdirname` | `gungame` | Config directory in `cfg/`; the files are read from `cfg/<value>/css/` on the next map. |
 | `sm_gg_turbo` | `0` | Turbo mode; overridden by `TurboMode` when the config is read. |
@@ -96,7 +96,9 @@ Set `"FFA" "1"` in `gungame.config.txt` and `mp_friendlyfire 1` on the server. I
 - `AutoFriendlyFire` and `EnableFriendlyFireLevel` never touch `mp_friendlyfire`;
 - gungame_logging does not log `gg_team_win` / `gg_team_lose`.
 
-The respawn and the spawn points are left to the deathmatch plugin. The game's own team
+The respawn and the spawn points are left to the deathmatch plugin. Set `"TurboMode" "1"`
+with a deathmatch plugin: without it the weapon of the new level is only given at the next
+spawn (round-based GunGame), so a player who levels up keeps the old weapon until they die. The game's own team
 kill punishments (`mp_autokick`, `mp_tkpunish`, `mp_spawnprotectiontime`) are server cvars,
 not handled by GunGame.
 

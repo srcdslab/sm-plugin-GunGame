@@ -3,6 +3,19 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.1
+
+### Fixed
+
+- Chat messages no longer end with a color tag (`{green}` after the last value). On CS:S a
+  color code with no text after it is printed as raw hex, for example
+  `Coco is tied with the leader on level 53EFF3E` (`gungame.phrases.txt`, `gungame_tk.phrases.txt`).
+
+### Documentation
+
+- README: with a deathmatch respawn plugin, `TurboMode` must be `1`, otherwise the next weapon
+  is only given at the next spawn.
+
 ## 2.0.0
 
 Fork of [altexdim/sourcemod-plugin-gungame](https://github.com/altexdim/sourcemod-plugin-gungame)
