@@ -167,6 +167,9 @@ int g_cfgEnableFriendlyFireLevel = 0;
 bool g_cfgFriendlyFireOnOff = true;
 bool g_Cfg_BlockWeaponSwitchIfKnife = false;
 bool g_Cfg_BlockWeaponSwitchOnNade = false;
+/* BlockWeaponPickup: players only get the weapons GunGame gives them. */
+bool g_Cfg_BlockWeaponPickup = false;
+bool g_AllowPickup[MAXPLAYERS+1];
 bool g_Cfg_HandicapUseSpectators = false;
 bool g_Cfg_CanLevelUpWithPhysics = false;
 bool g_Cfg_CanLevelUpWithPhysicsG = false;

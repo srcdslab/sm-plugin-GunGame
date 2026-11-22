@@ -789,7 +789,10 @@ int GivePlayerItemWrapper(int client, const char[] item, bool blockSwitch = fals
         g_BlockSwitch[client] = true;
     }
 
+    /* GivePlayerItem makes the player touch the new weapon: let OnWeaponCanUse accept it. */
+    g_AllowPickup[client] = true;
     int ent = GivePlayerItem(client, item);
+    g_AllowPickup[client] = false;
 
     if ( blockSwitch )
     {

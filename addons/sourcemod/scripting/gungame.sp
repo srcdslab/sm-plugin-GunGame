@@ -127,7 +127,7 @@ public void OnPluginStart()
     {
         if ( IsClientInGame(i) )
         {
-            SDKHook(i, SDKHook_WeaponSwitch, OnWeaponSwitch);
+            UTIL_HookClientWeapons(i);
         }
     }
 }
@@ -137,8 +137,17 @@ public void OnClientPutInServer(int client)
     g_SkipSpawn[client] = IsFakeClient(client);
     g_BlockSwitch[client] = false;
     g_MatchKills[client] = 0;
+    g_AllowPickup[client] = false;
 
+    UTIL_HookClientWeapons(client);
+}
+
+void UTIL_HookClientWeapons(int client)
+{
     SDKHook(client, SDKHook_WeaponSwitch, OnWeaponSwitch);
+    SDKHook(client, SDKHook_WeaponCanUse, OnWeaponCanUse);
+    SDKHook(client, SDKHook_Spawn, OnPlayerSpawnPre);
+    SDKHook(client, SDKHook_SpawnPost, OnPlayerSpawnPost);
 }
 
 public void OnClientAuthorized(int client, const char[] auth)
