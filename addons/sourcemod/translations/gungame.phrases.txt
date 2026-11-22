@@ -120,12 +120,12 @@
     "Is leading on level"
     {
         "#format"    "{1:s},{2:d}"
-        "en"     "{teamcolor}{1} {green}is leading on level {default}{2}{green}"
-        "de"     "{teamcolor}{1} {green}führt mit Level {default}{2}{green}"
-        "ru"     "{teamcolor}{1} {green}лидирует на уровне {default}{2}{green}"
-        "pt"     "{teamcolor}{1} {green}está na frente no nivel {default}{2}{green}"
-		"es"     "{teamcolor}{1} {green}está liderando en el nivel {default}{2}{green}"
-		"pl" 	 "{teamcolor}{1} {green} prowadzi na poziomie {default} {2} {green}"
+        "en"     "{teamcolor}{1} {green}is leading on level {default}{2}"
+        "de"     "{teamcolor}{1} {green}führt mit Level {default}{2}"
+        "ru"     "{teamcolor}{1} {green}лидирует на уровне {default}{2}"
+        "pt"     "{teamcolor}{1} {green}está na frente no nivel {default}{2}"
+		"es"     "{teamcolor}{1} {green}está liderando en el nivel {default}{2}"
+		"pl" 	 "{teamcolor}{1} {green} prowadzi na poziomie {default} {2}"
     }
     "Is leading on level weapon"
     {
@@ -140,12 +140,12 @@
     "Is tied with the leader on level"
     {
         "#format"    "{1:s},{2:d}"
-        "en"     "{teamcolor}{1} {green}is tied with the leader on level {default}{2}{green}"
+        "en"     "{teamcolor}{1} {green}is tied with the leader on level {default}{2}"
         "de"     "{teamcolor}{1} {green}hat den Führenden auf Level {default}{2}{green} eingeholt"
-        "ru"     "{teamcolor}{1} {green}догнал лидера на уровне {default}{2}{green}"
-        "pt"     "{teamcolor}{1} {green}está empatado com o primeiro no nivel {default}{2}{green}"
-		"es"     "{teamcolor}{1} {green}está empatado con el lider en el nivel {default}{2}{green}"
-		"pl"     "{teamcolor}{1} {green}remisuje z liderem na poziomie {default}{2}{green}"
+        "ru"     "{teamcolor}{1} {green}догнал лидера на уровне {default}{2}"
+        "pt"     "{teamcolor}{1} {green}está empatado com o primeiro no nivel {default}{2}"
+		"es"     "{teamcolor}{1} {green}está empatado con el lider en el nivel {default}{2}"
+		"pl"     "{teamcolor}{1} {green}remisuje z liderem na poziomie {default}{2}"
     }
     "GunGame has been enabled"
     {

@@ -19,7 +19,7 @@
  * Version of the whole GunGame:SM suite (every plugin uses it).
  * This is the only place to bump it.
  */
-#define GUNGAME_VERSION     "2.0.0"
+#define GUNGAME_VERSION     "2.0.1"
 
 #define GUNGAME_AUTHOR      "teame06-hat (http://www.hat-city.net), Liam, Otstrel.ru Team (http://otstrel.ru)"
 #define GUNGAME_URL         "https://github.com/srcdslab/sm-plugin-GunGame"
