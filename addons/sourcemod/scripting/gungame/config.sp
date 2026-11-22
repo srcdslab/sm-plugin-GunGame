@@ -2,7 +2,7 @@
  *  Config Reader
  */
 
-public GG_ConfigNewSection(const String:name[])
+public void GG_ConfigNewSection(const char[] name)
 {
     if(strcmp("Config", name, false) == 0)
     {
@@ -18,7 +18,7 @@ public GG_ConfigNewSection(const String:name[])
     }
 }
 
-public GG_ConfigKeyValue(const String:key[], const String:value[])
+public void GG_ConfigKeyValue(const char[] key, const char[] value)
 {
     if(ConfigReset && ConfigState == CONFIG_STATE_KILLS)
     {
@@ -31,16 +31,16 @@ public GG_ConfigKeyValue(const String:key[], const String:value[])
         case CONFIG_STATE_CONFIG:
         {
             if ( strcmp("Enabled", key, false) == 0 ) {
-                InternalIsActive = bool:StringToInt(value);
+                InternalIsActive = StringToInt(value) != 0;
 
             } else if(strcmp("FastSwitchSkipWeapons", key, false) == 0) {
-                for (new i = 0; i < sizeof (g_Cfg_FastSwitchSkipWeapons); i++) {
+                for (int i = 0; i < sizeof (g_Cfg_FastSwitchSkipWeapons); i++) {
                     g_Cfg_FastSwitchSkipWeapons[i] = false;
                 }
 
-                new String:FastSwitchSkipWeapons[MAX_WEAPONS_COUNT][MAX_WEAPON_NAME_LEN];
+                char FastSwitchSkipWeapons[MAX_WEAPONS_COUNT][MAX_WEAPON_NAME_LEN];
                 ExplodeString(value, ",", FastSwitchSkipWeapons, sizeof(FastSwitchSkipWeapons), sizeof(FastSwitchSkipWeapons[]));
-                for (new i = 0, weaponIndex = 0; i <= sizeof(FastSwitchSkipWeapons); i++) {
+                for (int i = 0, weaponIndex = 0; i < sizeof(FastSwitchSkipWeapons); i++) {
                     TrimString(FastSwitchSkipWeapons[i]);
                     if (!FastSwitchSkipWeapons[i][0]) {
                         break;
@@ -62,24 +62,9 @@ public GG_ConfigKeyValue(const String:key[], const String:value[])
             } else if(strcmp("WinnerFreezePlayers", key, false) == 0) {
                 g_Cfg_WinnerFreezePlayers = StringToInt(value);
 
-            } else if(strcmp("MolotovBonusFlash", key, false) == 0) {
-                g_Cfg_MolotovBonusFlash = StringToInt(value);
-            } else if(strcmp("MolotovBonusSmoke", key, false) == 0) {
-                g_Cfg_MolotovBonusSmoke = StringToInt(value);
-            } else if(strcmp("MolotovBonusWeaponName", key, false) == 0) {
-                if (!value[0]) {
-                    g_Cfg_MolotovBonusWeaponId = 0;
-                } else {
-                    g_Cfg_MolotovBonusWeaponId = UTIL_GetWeaponIndex(value);
-                }
-            } else if(strcmp("ExtraMolotovOnKnifeKill", key, false) == 0) {
-                g_Cfg_ExtraMolotovOnKnifeKill = StringToInt(value);
-
             } else if(strcmp("EndGameDelay", key, false) == 0) {
                 g_Cfg_EndGameDelay = StringToFloat(value);
 
-            } else if(strcmp("ExtraTaserOnKnifeKill", key, false) == 0) {
-                g_Cfg_ExtraTaserOnKnifeKill = StringToInt(value);
             } else if(strcmp("BonusWeaponAmmo", key, false) == 0) {
                 g_Cfg_BonusWeaponAmmo = StringToInt(value);
             } else if(strcmp("MultiplySoundVolume", key, false) == 0) {
@@ -95,15 +80,15 @@ public GG_ConfigKeyValue(const String:key[], const String:value[])
                     g_cfgEnableFriendlyFireLevel = 0;
                 }
             } else if(strcmp("AlltalkOnWin", key, false) == 0) {
-                AlltalkOnWin = bool:StringToInt(value);
+                AlltalkOnWin = StringToInt(value) != 0;
             } else if(strcmp("RemoveBonusWeaponAmmo", key, false) == 0) {
-                RemoveBonusWeaponAmmo = bool:StringToInt(value);
+                RemoveBonusWeaponAmmo = StringToInt(value) != 0;
             } else if(strcmp("ReloadWeapon", key, false) == 0) {
-                ReloadWeapon = bool:StringToInt(value);
+                ReloadWeapon = StringToInt(value) != 0;
             } else if(strcmp("AllowLevelUpAfterRoundEnd", key, false) == 0) {
-                AllowLevelUpAfterRoundEnd = bool:StringToInt(value);
+                AllowLevelUpAfterRoundEnd = StringToInt(value) != 0;
             } else if(strcmp("RestoreLevelOnReconnect", key, false) == 0) {
-                RestoreLevelOnReconnect = bool:StringToInt(value);
+                RestoreLevelOnReconnect = StringToInt(value) != 0;
             } else if(strcmp("FFA", key, false) == 0) {
                 FFA = StringToInt(value);
             } else if(strcmp("NumberOfNades", key, false) == 0) {
@@ -113,17 +98,17 @@ public GG_ConfigKeyValue(const String:key[], const String:value[])
                     NumberOfNades = 0;
                 }
             } else if(strcmp("TurboMode", key, false) == 0) {
-                TurboMode = bool:StringToInt(value);
-                SetConVarInt(g_Cvar_Turbo, TurboMode);
+                TurboMode = StringToInt(value) != 0;
+                g_Cvar_Turbo.SetBool(TurboMode);
             } else if(strcmp("HandicapTimesPerMap", key, false) == 0) {
                 g_Cfg_HandicapTimesPerMap = StringToInt(value);
             } else if(strcmp("MultiLevelAmount", key, false) == 0) {
                 g_Cfg_MultiLevelAmount = StringToInt(value);
-                SetConVarInt(g_Cvar_MultiLevelAmount, g_Cfg_MultiLevelAmount);
+                g_Cvar_MultiLevelAmount.IntValue = g_Cfg_MultiLevelAmount;
             } else if(strcmp("KnifeProMaxDiff", key, false) == 0) {
                 g_Cfg_KnifeProMaxDiff = StringToInt(value);
             } else if(strcmp("HandicapSkipBots", key, false) == 0) {
-                g_Cfg_HandicapSkipBots = bool:StringToInt(value);
+                g_Cfg_HandicapSkipBots = StringToInt(value) != 0;
             } else if(strcmp("KnifeProRecalcPoints", key, false) == 0) {
                 g_Cfg_KnifeProRecalcPoints = StringToInt(value);
             } else if(strcmp("HandicapUpdate", key, false) == 0) {
@@ -162,7 +147,7 @@ public GG_ConfigKeyValue(const String:key[], const String:value[])
             } else if(strcmp("MultiLevelBonusSpeed", key, false) == 0) {
                g_Cfg_TripleLevelBonusSpeed = StringToFloat(value);
             } else if(strcmp("MultiLevelEffect", key, false) == 0) {
-               g_Cfg_TripleLevelEffect = bool:StringToInt(value);
+               g_Cfg_TripleLevelEffect = StringToInt(value) != 0;
             } else if(strcmp("MultiLevelBonusGravity", key, false) == 0) {
                g_Cfg_TripleLevelBonusGravity = StringToFloat(value);
             } else if(strcmp("LevelsInScoreboard", key, false) == 0) {
@@ -170,18 +155,18 @@ public GG_ConfigKeyValue(const String:key[], const String:value[])
             } else if(strcmp("UnlimitedNadesMinPlayers", key, false) == 0) {
                 UnlimitedNadesMinPlayers = StringToInt(value);
             } else if(strcmp("WarmupRandomWeaponMode", key, false) == 0) {
-                WarmupRandomWeaponMode = bool:StringToInt(value);
+                WarmupRandomWeaponMode = StringToInt(value) != 0;
                 WarmupRandomWeaponLevel = -1;
             } else if(strcmp("StripDeadPlayersWeapon", key, false) == 0) {
                 StripDeadPlayersWeapon = StringToInt(value);
             } else if(strcmp("MultiKillChat", key, false) == 0) {
-                MultiKillChat = bool:StringToInt(value);
+                MultiKillChat = StringToInt(value) != 0;
             } else if(strcmp("JoinMessage", key, false) == 0) {
-                JoinMessage = bool:StringToInt(value);
+                JoinMessage = StringToInt(value) != 0;
             } else if(strcmp("VoteLevelLessWeaponCount", key, false) == 0) {
                 VoteLevelLessWeaponCount = StringToInt(value);
             } else if(strcmp("AutoFriendlyFire", key, false) == 0) {
-                AutoFriendlyFire = bool:StringToInt(value);
+                AutoFriendlyFire = StringToInt(value) != 0;
             } else if(strcmp("RemoveObjectives", key, false) == 0) {
                 MapStatus = StringToInt(value);
             } else if(strcmp("ObjectiveBonus", key, false) == 0) {
@@ -201,18 +186,18 @@ public GG_ConfigKeyValue(const String:key[], const String:value[])
                     MinKillsPerLevel = 1;
                 }
             } else if(strcmp("BotsCanWinGame", key, false) == 0) {
-                BotCanWin = bool:StringToInt(value);
+                BotCanWin = StringToInt(value) != 0;
             } else if(strcmp("KnifePro", key, false) == 0) {
-                KnifePro = bool:StringToInt(value);
+                KnifePro = StringToInt(value) != 0;
             } else if(strcmp("KnifeElite", key, false) == 0) {
-                KnifeElite = bool:StringToInt(value);
+                KnifeElite = StringToInt(value) != 0;
             } else if(strcmp("WarmupEnabled", key, false) == 0) {
-                WarmupEnabled = bool:StringToInt(value);
+                WarmupEnabled = StringToInt(value) != 0;
                 DisableWarmupOnRoundEnd = false;
             } else if(strcmp("WarmupTimeLength", key, false) == 0) {
                 Warmup_TimeLength = StringToInt(value);
             } else if(strcmp("NadeSmoke", key, false) == 0) {
-                NadeSmoke = bool:StringToInt(value);
+                NadeSmoke = StringToInt(value) != 0;
             } else if(strcmp("NadeBonus", key, false) == 0) {
                 if ( !value[0] ) {
                     NadeBonusWeaponId = 0;
@@ -220,21 +205,21 @@ public GG_ConfigKeyValue(const String:key[], const String:value[])
                     NadeBonusWeaponId = UTIL_GetWeaponIndex(value);
                 }
             } else if(strcmp("NadeFlash", key, false) == 0) {
-                NadeFlash = bool:StringToInt(value);
+                NadeFlash = StringToInt(value) != 0;
             } else if(strcmp("ExtraNade", key, false) == 0) {
                 g_Cfg_ExtraNade = StringToInt(value);
             } else if(strcmp("UnlimitedNades", key, false) == 0) {
-                UnlimitedNades = bool:StringToInt(value);
+                UnlimitedNades = StringToInt(value) != 0;
             } else if(strcmp("WarmupNades", key, false) == 0) {
-                WarmupNades = bool:StringToInt(value);
+                WarmupNades = StringToInt(value) != 0;
             } else if(strcmp("MultiLevelBonus", key, false) == 0) {
-                TripleLevelBonus = bool:StringToInt(value);
+                TripleLevelBonus = StringToInt(value) != 0;
             } else if(strcmp("MultiLevelBonusGodMode", key, false) == 0) {
-                TripleLevelBonusGodMode = bool:StringToInt(value);
+                TripleLevelBonusGodMode = StringToInt(value) != 0;
             } else if(strcmp("ObjectiveBonusWin", key, false) == 0) {
-                ObjectiveBonusWin = bool:StringToInt(value);
+                ObjectiveBonusWin = StringToInt(value) != 0;
             } else if(strcmp("KnifeProHE", key, false) == 0) {
-                KnifeProHE = bool:StringToInt(value);
+                KnifeProHE = StringToInt(value) != 0;
             } else if(strcmp("KnifeProMinLevel", key, false) == 0) {
                 KnifeProMinLevel = StringToInt(value) - 1;
 
@@ -247,34 +232,34 @@ public GG_ConfigKeyValue(const String:key[], const String:value[])
             } else if(strcmp("HandicapMode", key, false) == 0) {
                 HandicapMode = StringToInt(value);
             } else if(strcmp("TopRankHandicap", key, false) == 0) {
-                TopRankHandicap = bool:StringToInt(value);
+                TopRankHandicap = StringToInt(value) != 0;
             } else if(strcmp("FriendlyFireOnOff", key, false) == 0) {
-                g_cfgFriendlyFireOnOff = bool:StringToInt(value);
+                g_cfgFriendlyFireOnOff = StringToInt(value) != 0;
             } else if(strcmp("HandicapUseSpectators", key, false) == 0) {
-                g_Cfg_HandicapUseSpectators = bool:StringToInt(value);
+                g_Cfg_HandicapUseSpectators = StringToInt(value) != 0;
             } else if(strcmp("CanLevelUpWithPhysics", key, false) == 0) {
-                g_Cfg_CanLevelUpWithPhysics = bool:StringToInt(value);
+                g_Cfg_CanLevelUpWithPhysics = StringToInt(value) != 0;
             } else if(strcmp("CanLevelUpWithPhysicsOnGrenade", key, false) == 0) {
-                g_Cfg_CanLevelUpWithPhysicsG = bool:StringToInt(value);
+                g_Cfg_CanLevelUpWithPhysicsG = StringToInt(value) != 0;
             } else if(strcmp("CanLevelUpWithPhysicsOnKnife", key, false) == 0) {
-                g_Cfg_CanLevelUpWithPhysicsK = bool:StringToInt(value);
+                g_Cfg_CanLevelUpWithPhysicsK = StringToInt(value) != 0;
             } else if(strcmp("CanLevelUpWithMapNades", key, false) == 0) {
-                g_Cfg_CanLevelUpWithMapNades = bool:StringToInt(value);
+                g_Cfg_CanLevelUpWithMapNades = StringToInt(value) != 0;
             } else if(strcmp("CanLevelUpWithNadeOnKnife", key, false) == 0) {
-                g_Cfg_CanLevelUpWithNadeOnKnife = bool:StringToInt(value);
+                g_Cfg_CanLevelUpWithNadeOnKnife = StringToInt(value) != 0;
             } else if(strcmp("DisableLevelDown", key, false) == 0) {
-                g_Cfg_DisableLevelDown = bool:StringToInt(value);
+                g_Cfg_DisableLevelDown = StringToInt(value) != 0;
             } else if(strcmp("SelfKillProtection", key, false) == 0) {
-                g_Cfg_SelfKillProtection = bool:StringToInt(value);
+                g_Cfg_SelfKillProtection = StringToInt(value) != 0;
             } else if(strcmp("GameDesc", key, false) == 0) {
                 strcopy(g_CfgGameDesc, sizeof(g_CfgGameDesc), value);
                 ReplaceString(g_CfgGameDesc, sizeof(g_CfgGameDesc), "{version}", GUNGAME_VERSION, false);
             } else if(strcmp("MultilevelEffectType", key, false) == 0) {
                 g_Cfg_MultilevelEffectType = StringToInt(value);
             } else if ( strcmp("BlockWeaponSwitchOnNade", key, false) == 0 ) {
-                g_Cfg_BlockWeaponSwitchOnNade = bool:StringToInt(value);
+                g_Cfg_BlockWeaponSwitchOnNade = StringToInt(value) != 0;
             } else if ( strcmp("BlockWeaponSwitchIfKnife", key, false) == 0 ) {
-                g_Cfg_BlockWeaponSwitchIfKnife = bool:StringToInt(value);
+                g_Cfg_BlockWeaponSwitchIfKnife = StringToInt(value) != 0;
             } else if ( strcmp("EndGameSilent", key, false) == 0 ) {
                 g_Cfg_EndGameSilent = StringToInt(value);
             }
@@ -285,9 +270,9 @@ public GG_ConfigKeyValue(const String:key[], const String:value[])
             
             if ( ( strcmp("RandomWeaponReserveLevels", key, false) == 0 ) && ( value[0] ) )
             {
-                new String:buffers[sizeof(g_Cfg_RandomWeaponReservLevels)][3];
+                char buffers[sizeof(g_Cfg_RandomWeaponReservLevels)][3];
                 ExplodeString(value, ",", buffers, sizeof(buffers), sizeof(buffers[]));
-                for ( new i = 0; i < sizeof(buffers); i++ )
+                for ( int i = 0; i < sizeof(buffers); i++ )
                 {
                     if ( !buffers[i][0] ) {
                         break;
@@ -299,8 +284,9 @@ public GG_ConfigKeyValue(const String:key[], const String:value[])
             {
                 // Setup random weapon order.
                 RandomWeaponOrder = true;
-                new String:tmpWeaponName[24], sizeOfRandom;
-                for ( new i = 0; i < WeaponOrderCount; i++ )
+                char tmpWeaponName[MAX_WEAPON_NAME_LEN];
+                int sizeOfRandom;
+                for ( int i = 0; i < WeaponOrderCount; i++ )
                 {
                     if ( !g_Cfg_RandomWeaponReservLevels[i] )
                     {
@@ -308,7 +294,7 @@ public GG_ConfigKeyValue(const String:key[], const String:value[])
                     }
                 }
                 UTIL_ArrayIntRand(RandomWeaponOrderMap, sizeOfRandom);
-                for ( new i = 0; (i < WeaponOrderCount) && (sizeOfRandom < WeaponOrderCount); i++ )
+                for ( int i = 0; (i < WeaponOrderCount) && (sizeOfRandom < WeaponOrderCount); i++ )
                 {
                     if ( g_Cfg_RandomWeaponReservLevels[i] )
                     {
@@ -316,7 +302,7 @@ public GG_ConfigKeyValue(const String:key[], const String:value[])
                         RandomWeaponOrderMap[i] = i;
                     }
                 }
-                for ( new i = 0; i < WeaponOrderCount; i++ )
+                for ( int i = 0; i < WeaponOrderCount; i++ )
                 {
                     tmpWeaponName = WeaponOrderName[RandomWeaponOrderMap[i]];
                     WeaponOrderName[RandomWeaponOrderMap[i]] = WeaponOrderName[i];
@@ -325,7 +311,7 @@ public GG_ConfigKeyValue(const String:key[], const String:value[])
             }
             else
             {
-                new Level = StringToInt(key);
+                int Level = StringToInt(key);
 
                 if ( 1 <= Level <= GUNGAME_MAX_LEVEL )
                 {
@@ -337,10 +323,10 @@ public GG_ConfigKeyValue(const String:key[], const String:value[])
 
         case CONFIG_STATE_KILLS:
         {
-            new Level = StringToInt(key)-1;
+            int Level = StringToInt(key)-1;
             if ( RandomWeaponOrder ) 
             {
-                for (new i = 0; i < WeaponOrderCount; i++)
+                for (int i = 0; i < WeaponOrderCount; i++)
                 {
                     if ( RandomWeaponOrderMap[i] == Level )
                     {
@@ -388,10 +374,10 @@ public GG_ConfigKeyValue(const String:key[], const String:value[])
     }
 }
 
-ConfigSetSound(Sounds:type, const String:value[]) {
+void ConfigSetSound(Sounds type, const char[] value) {
     if (!StrEqual(value, "", false)) {
-        new String:songs[128][128];
-        new songsfound = ExplodeString(value, ",", songs, 128, 128);
+        char songs[16][PLATFORM_MAX_PATH];
+        int songsfound = ExplodeString(value, ",", songs, sizeof(songs), sizeof(songs[]));
         if (songsfound > 1) {
             strcopy(EventSounds[type], sizeof(EventSounds[]), songs[UTIL_GetRandomInt(0, songsfound-1)]);
         } else {
@@ -403,12 +389,12 @@ ConfigSetSound(Sounds:type, const String:value[]) {
     }
 }
 
-public GG_ConfigParseEnd()
+public void GG_ConfigParseEnd()
 {
     ConfigState = CONFIG_STATE_NONE;
 }
 
-public GG_ConfigEnd()
+public void GG_ConfigEnd()
 {
     /**
      * It should of been done reading the end of WeaponOrder List
@@ -430,13 +416,13 @@ public GG_ConfigEnd()
 
     if(InternalIsActive)
     {
-        SetConVarInt(gungame_enabled, 1);
+        gungame_enabled.IntValue = 1;
 
         Call_StartForward(FwdStart);
         Call_PushCell(false);
         Call_Finish();
     } else {
-        SetConVarInt(gungame_enabled, 0);
+        gungame_enabled.IntValue = 0;
 
         Call_StartForward(FwdShutdown);
         Call_PushCell(false);
@@ -444,19 +430,19 @@ public GG_ConfigEnd()
     }
 }
 
-public OnConfigsExecuted()
+public void OnConfigsExecuted()
 {
     if(IsActive)
     {
-        decl String:ConfigGameDirName[PLATFORM_MAX_PATH];
+        char ConfigGameDirName[PLATFORM_MAX_PATH];
         GG_ConfigGetDir(ConfigGameDirName, sizeof(ConfigGameDirName));
-        InsertServerCommand("exec \\%s\\gungame.mapconfig.cfg", ConfigGameDirName);
+        InsertServerCommand("exec %s/gungame.mapconfig.cfg", ConfigGameDirName);
     }
 }
 
-ClearCustomKill()
+void ClearCustomKill()
 {
-    for(new i = 0; i < WeaponOrderCount; i++)
+    for(int i = 0; i < WeaponOrderCount; i++)
     {
         CustomKillPerLevel[i] = 0;
     }
