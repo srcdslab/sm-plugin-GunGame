@@ -8,7 +8,12 @@
 #include <gungame_config>
 #include <url>
 
-char g_looserName[MAXPLAYERS+1][MAX_NAME_SIZE];
+/* Names are cut to this many bytes in the URL: UTF-8 names triple in size once encoded, and CS:S
+ * drops a VGUI menu (MOTD) message over 255 bytes. */
+#define URL_NAME_MAX_BYTES  32
+#define MOTD_URL_MAX_LEN    240
+
+char g_looserName[MAX_NAME_SIZE];
 char g_winnerName[MAX_NAME_SIZE];
 bool g_showWinnerOnRankUpdate = false;
 int g_winner;
@@ -27,25 +32,6 @@ public Plugin myinfo =
     url = GUNGAME_URL
 };
 
-public void OnPluginStart()
-{
-    HookEvent("player_death", Event_PlayerDeath);
-}
-
-public void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
-{
-    if ( !g_Cfg_DisplayWinnerMotd )
-    {
-        return;
-    }
-    int victim = GetClientOfUserId(event.GetInt("userid"));
-    int attacker = GetClientOfUserId(event.GetInt("attacker"));
-    if ( !victim || !attacker )
-    {
-        return;
-    }
-    GetClientName(victim, g_looserName[attacker], sizeof(g_looserName[]));
-}
 
 public void GG_OnWinner(int client, const char[] weapon, int victim)
 {
@@ -54,8 +40,41 @@ public void GG_OnWinner(int client, const char[] weapon, int victim)
         return;
     }
     GetClientName(client, g_winnerName, sizeof(g_winnerName));
+    /* The player killed by the winning kill (none for a win through a native or an objective). */
+    g_looserName[0] = '\0';
+    if ( victim > 0 && victim <= MaxClients && IsClientInGame(victim) )
+    {
+        GetClientName(victim, g_looserName, sizeof(g_looserName));
+    }
     g_showWinnerOnRankUpdate = true;
     g_winner = GetClientUserId(client);
+
+    /* gungame_stats fires GG_OnLoadRank after the save; do not wait for ever if it never comes. */
+    CreateTimer(5.0, Timer_ShowWinnerFallback, _, TIMER_FLAG_NO_MAPCHANGE);
+}
+
+public Action Timer_ShowWinnerFallback(Handle timer)
+{
+    GG_OnLoadRank();
+    return Plugin_Stop;
+}
+
+/**
+ * Copies at most maxBytes of a UTF-8 string without cutting a character in two.
+ */
+void Utf8Truncate(const char[] source, char[] dest, int maxBytes)
+{
+    strcopy(dest, maxBytes + 1, source);
+    int len = strlen(dest);
+    if ( len < strlen(source) )
+    {
+        /* Cut before a continuation byte: back off to the start of the character. */
+        while ( len > 0 && (source[len] & 0xC0) == 0x80 )
+        {
+            len--;
+        }
+        dest[len] = '\0';
+    }
 }
 
 public void GG_OnLoadRank()
@@ -78,11 +97,18 @@ public void GG_OnLoadRank()
     }
     if ( g_Cfg_DisplayWinnerMotd )
     {
-        char url[128+sizeof(g_Cfg_DisplayWinnerUrl)];
-        char winnerNameUrlEncoded[sizeof(g_winnerName)*3+1];
-        char looserNameUrlEncoded[sizeof(g_looserName[])*3+1];
-        url_encode(g_winnerName, sizeof(g_winnerName), winnerNameUrlEncoded, sizeof(winnerNameUrlEncoded));
-        url_encode(g_looserName[winner], sizeof(g_looserName[]), looserNameUrlEncoded, sizeof(looserNameUrlEncoded));
+        if ( !g_Cfg_DisplayWinnerUrl[0] )
+        {
+            return;
+        }
+        char url[512];
+        char winnerShort[URL_NAME_MAX_BYTES + 1], looserShort[URL_NAME_MAX_BYTES + 1];
+        char winnerNameUrlEncoded[URL_NAME_MAX_BYTES*3+1];
+        char looserNameUrlEncoded[URL_NAME_MAX_BYTES*3+1];
+        Utf8Truncate(g_winnerName, winnerShort, URL_NAME_MAX_BYTES);
+        Utf8Truncate(g_looserName, looserShort, URL_NAME_MAX_BYTES);
+        url_encode(winnerShort, sizeof(winnerShort), winnerNameUrlEncoded, sizeof(winnerNameUrlEncoded));
+        url_encode(looserShort, sizeof(looserShort), looserNameUrlEncoded, sizeof(looserNameUrlEncoded));
 
         bool urlHasParams = (StrContains(g_Cfg_DisplayWinnerUrl, "?", true) != -1);
 
@@ -95,6 +121,11 @@ public void GG_OnLoadRank()
             GG_GetPlayerPlaceInStat(winner),  /* HINT: gungame_stats */
             GG_CountPlayersInStat()           /* HINT: gungame_stats */
         );
+        if ( strlen(url) > MOTD_URL_MAX_LEN )
+        {
+            LogError("[GunGame] Winner MOTD URL too long (%d bytes, max %d): shorten DisplayWinnerUrl", strlen(url), MOTD_URL_MAX_LEN);
+            return;
+        }
         for ( int i = 1; i <= MaxClients; i++ )
         {
             if ( IsClientInGame(i) && !IsFakeClient(i) )

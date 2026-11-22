@@ -140,17 +140,20 @@ bool GetClientDbAuth(int client, char[] auth, int maxlen)
     return GetClientAuthId(client, AuthId_Steam2, auth, maxlen);
 }
 
-void SavePlayerData(int client)
+/**
+ * @return      true if the save was sent (GG_OnLoadRank follows), false otherwise.
+ */
+bool SavePlayerData(int client)
 {
     if ( g_DbConnection == null )
     {
-        return;
+        return false;
     }
 
     char auth[64], name[MAX_NAME_SIZE];
     if ( !GetClientDbAuth(client, auth, sizeof(auth)) )
     {
-        return;
+        return false;
     }
     GetClientName(client, name, sizeof(name));
     StripFourByteUtf8(name);
@@ -170,6 +173,7 @@ void SavePlayerData(int client)
         LogError("[DEBUG-SQL] save win client=%i auth=%s", client, auth);
     #endif
     g_DbConnection.Execute(txn, T_SavePlayerDataSuccess, T_SavePlayerDataFailure, GetClientUserId(client));
+    return true;
 }
 
 public void T_SavePlayerDataSuccess(Database db, int userid, int numQueries, DBResultSet[] results, any[] queryData)
@@ -188,6 +192,20 @@ public void T_SavePlayerDataSuccess(Database db, int userid, int numQueries, DBR
 public void T_SavePlayerDataFailure(Database db, int userid, int numQueries, const char[] error, int failIndex, any[] queryData)
 {
     LogError("Failed to save player data (error: %s)", error);
+    LoadRankOrFire();
+}
+
+/**
+ * Reloads the rank, or tells GG_OnLoadRank listeners right away when there is no database.
+ */
+void LoadRankOrFire()
+{
+    if ( g_DbConnection == null )
+    {
+        FireLoadRank();
+        return;
+    }
+    LoadRank();
 }
 
 int GetPlayerPlaceInStat(int client)

@@ -142,11 +142,16 @@ public void GG_OnWinner(int client, const char[] Weapon, int victim)
     {
         if ( g_Cfg_DontAddWinsOnBot && victim && IsClientInGame(victim) && IsFakeClient(victim) )
         {
+            /* The win is not saved, but GG_OnLoadRank listeners (display winner) still wait for it. */
+            LoadRankOrFire();
             return;
         }
 
         ++PlayerWinsData[client];
-        SavePlayerData(client);
+        if ( !SavePlayerData(client) )
+        {
+            LoadRankOrFire();
+        }
     }
 }
 
