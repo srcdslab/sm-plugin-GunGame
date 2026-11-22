@@ -224,10 +224,11 @@ public void _PlayerDeath(Event event, const char[] name, bool dontBroadcast)
         LogError("[DEBUG-GUNGAME] EVENT PLAYER_DEATH weapon=%s victim=%s killer=%s", Weapon, vName, kName);
     #endif
 
-    /* Kill self with world spawn */
+    /* Kill self with world spawn. A non-zero attacker that is gone (grenade of a player who left)
+     * is not a suicide: nobody is punished. */
     if ( !Killer )
     {
-        if ( RoundStarted && WorldspawnSuicide )
+        if ( !event.GetInt("attacker") && RoundStarted && WorldspawnSuicide )
         {
             ClientSuicide(Victim, vName, WorldspawnSuicide);
         }
@@ -247,7 +248,13 @@ public void _PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 
     // Victim > 0 && Killer > 0
 
-    int WeaponIndex = UTIL_GetWeaponIndex(Weapon), WeaponLevelIndex = g_WeaponLevelIndex[WeaponIndex];
+    /* The killer left the game in the meantime (grenade thrown before moving to spectator). */
+    if ( GetClientTeam(Killer) < TEAM_T )
+    {
+        return;
+    }
+
+    int WeaponIndex = UTIL_GetWeaponIndex(Weapon, true), WeaponLevelIndex = g_WeaponLevelIndex[WeaponIndex];
     Action ret = Plugin_Continue;
 
     if ( WarmupEnabled )
