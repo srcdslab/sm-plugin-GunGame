@@ -52,10 +52,12 @@ forward void GG_OnShutdown(bool Command);
 
 /**
  * Called before the player level changes. Legacy pre-hook, levels are 0-based.
+ * Not called when the level would not change (a level 1 player losing a level, a bot
+ * on the last level while bots cannot win).
  *
  * @param client        Player index.
  * @param level         Player new level (starting from 0).
- * @param difference    The difference in the level change.
+ * @param difference    The real difference (after clamping to the first/winning level).
  * @param steal         true if it was a knife steal otherwise false
  * @param last          true if player reached last level.
  * @param knife         true if player reached knife level.

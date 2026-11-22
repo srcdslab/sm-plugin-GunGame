@@ -3,6 +3,17 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.6
+
+### Fixed
+
+- `GG_OnClientLevelChange` fired for level changes that did not happen: a level 1 player losing
+  a level (knife stolen, suicide, team kill) and a bot on the last level while bots cannot win.
+  gungame_logging logged fake `gg_leveldown` / `gg_levelup` / `gg_knife_level` events for HLstatsX,
+  the player's points were reset and the level-down sound played. The forward now gets the real
+  difference after clamping (losing 3 levels from level 2 logs 1 event) (#8).
+- No out-of-bounds read of the weapon order on the winning kill with a 64-level weapon order (#8).
+
 ## 2.0.5
 
 ### Fixed
