@@ -150,9 +150,12 @@ void UTIL_HookClientWeapons(int client)
     SDKHook(client, SDKHook_SpawnPost, OnPlayerSpawnPost);
 }
 
-public void OnClientAuthorized(int client, const char[] auth)
+/* Restore the level once the client is in game and authorized (OnClientAuthorized can run before
+ * OnClientPutInServer, the leader would then be a client that is not in game), and only during a
+ * running match. */
+public void OnClientPostAdminCheck(int client)
 {
-    if ( RestoreLevelOnReconnect && !IsFakeClient(client) )
+    if ( RestoreLevelOnReconnect && IsActive && !WarmupEnabled && !GameWinner && !IsFakeClient(client) )
     {
         char steamid[64];
         int level = 0;
@@ -547,7 +550,8 @@ public Action Timer_HandicapUpdate(Handle timer)
 
     for ( int i = 1; i <= MaxClients; i++ )
     {
-        if ( IsClientInGame(i) && (PlayerLevel[i] == minimum) )
+        /* Only players in a team (not spectators, unassigned players or SourceTV). */
+        if ( IsClientInGame(i) && GetClientTeam(i) >= TEAM_T && (PlayerLevel[i] == minimum) )
         {
             if ( g_Cfg_HandicapSkipBots && IsFakeClient(i) ) {
                 continue;
@@ -559,6 +563,9 @@ public Action Timer_HandicapUpdate(Handle timer)
                     || GG_IsPlayerInTopRank(i) ) /* HINT: gungame_stats */
             )
             {
+                continue;
+            }
+            if ( !UTIL_ConsumeHandicapTime(i) ) {
                 continue;
             }
             int oldLevel = PlayerLevel[i];

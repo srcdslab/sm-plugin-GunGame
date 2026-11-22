@@ -1249,7 +1249,8 @@ int UTIL_GetMinimumLevel(bool skipBots = false, int aboveLevel = -1, int skipCli
         if ( IsClientInGame(i) && ( g_Cfg_HandicapUseSpectators || GetClientTeam(i) > TEAM_SPECTATOR ) )
         {
             if ( ( skipBots && IsFakeClient(i) )
-                || ( GetClientTeam(i) < TEAM_T )
+                || IsClientSourceTV(i)
+                || ( GetClientTeam(i) < (g_Cfg_HandicapUseSpectators ? TEAM_SPECTATOR : TEAM_T) )
                 || ( skipClient == i ) )
             {
                 continue;
@@ -1275,7 +1276,8 @@ int UTIL_GetAverageLevel(bool skipBots = false, int aboveLevel = -1, int skipCli
         if ( IsClientInGame(i) && ( g_Cfg_HandicapUseSpectators || GetClientTeam(i) > TEAM_SPECTATOR ) )
         {
             if ( ( skipBots && IsFakeClient(i) )
-                || ( GetClientTeam(i) < TEAM_T )
+                || IsClientSourceTV(i)
+                || ( GetClientTeam(i) < (g_Cfg_HandicapUseSpectators ? TEAM_SPECTATOR : TEAM_T) )
                 || ( skipClient == i ) )
             {
                 continue;
@@ -1296,6 +1298,19 @@ int UTIL_GetAverageLevel(bool skipBots = false, int aboveLevel = -1, int skipCli
 }
 
 bool UTIL_SetHandicapForClient(int client)
+{
+    if ( !UTIL_ConsumeHandicapTime(client) )
+    {
+        return false;
+    }
+    return GiveHandicapLevel(client);
+}
+
+/**
+ * HandicapTimesPerMap: counts one more handicap for the client.
+ * @return      false when the client already got the maximum number of handicaps this map.
+ */
+bool UTIL_ConsumeHandicapTime(int client)
 {
     if ( g_Cfg_HandicapTimesPerMap )
     {
@@ -1319,7 +1334,7 @@ bool UTIL_SetHandicapForClient(int client)
         PlayerHandicapTimes.SetValue(auth, times);
     }
 
-    return GiveHandicapLevel(client);
+    return true;
 }
 
 void UTIL_StartEffectClient(int client)

@@ -3,6 +3,17 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.10
+
+### Fixed
+
+- `HandicapUpdate` raised spectators, unassigned players and SourceTV, and ignored
+  `HandicapTimesPerMap` (#12).
+- `HandicapUseSpectators 1` had no effect; SourceTV never counts in the handicap level (#12).
+- `RestoreLevelOnReconnect` restored the level in `OnClientAuthorized`, which can run before the
+  player is in game (he could become the leader before being in game), also during warmup or after
+  a win. The level is now restored at `OnClientPostAdminCheck`, during a running match only (#12).
+
 ## 2.0.9
 
 ### Fixed
