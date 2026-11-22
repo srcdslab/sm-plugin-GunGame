@@ -16,9 +16,7 @@
          * of weapon names from gungame.equip.txt.
          *
          * Options:
-         *      "hegrenade"                             - Enabled for hegrenade
-         *      "hegrenade,taser"                       - Enabled for hegrenade and taser
-         *      "taser,hegrenade,molotov,incgrenade"    - Default value
+         *      "hegrenade"                             - Enabled for hegrenade (default value)
          *      ""                                      - Disabled
          */
         "FastSwitchSkipWeapons" "hegrenade"
@@ -82,7 +80,6 @@
         /**
          * Multiply sound effects volume.
          *
-         * In CS:GO the volume is too low.
          * You can up the volume with this multiplier.
          *
          * Options:
@@ -212,8 +209,14 @@
         /** 
          * FFA DM mode.
          *
-         * If you are using CSS:DM with FFA mode enabled, 
+         * If you are using a free-for-all deathmatch (mp_friendlyfire 1, everyone is an enemy),
          * then you should set this variable to "1".
+         *
+         * In FFA mode:
+         *   - a kill on a teammate counts as a normal kill (it levels up the killer);
+         *   - team kills are never reported (GG_OnClientDeath TeamKilled is false),
+         *     so TkLooseLevel never removes levels;
+         *   - AutoFriendlyFire and EnableFriendlyFireLevel never change mp_friendlyfire.
          *
          * 0 - Disabled
          * 1 - Enabled

@@ -1013,7 +1013,7 @@
         "ru"    "\nЛидер находится на уровне {1} :: {2}\n \nЛидеры:"
         "de"    "\naktuell Führender ist auf Level {1} :: {2}\n \nLeaders:"
         "pt"    "\nO lider corrente está no nivel {1} :: {2}\n \nLideres:"
-		"pt"    "\nO el líder actual está en el nivel {1} :: {2}\n \nLíderes:"
+		"es"    "\nEl líder actual está en el nivel {1} :: {2}\n \nLíderes:"
 		"pl"    "\nObecny lider jest na poziomie {1} :: {2}\n \nLiderzy:"
     }
     "Your level has been updated by handicap"

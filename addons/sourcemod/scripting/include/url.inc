@@ -1,26 +1,35 @@
-new String:hexchars[] = "0123456789ABCDEF";
+#if defined _gungame_url_included_
+  #endinput
+#endif
+#define _gungame_url_included_
 
-url_encode(String:strFrom[], lenFrom, String:strTo[], lenTo)
+/**
+ * URL-encodes a string (spaces become '+').
+ *
+ * @param strFrom       Source string.
+ * @param lenFrom       Size of the source string.
+ * @param strTo         Output buffer.
+ * @param lenTo         Size of the output buffer.
+ */
+stock void url_encode(const char[] strFrom, int lenFrom, char[] strTo, int lenTo)
 {
-    new c;
-    new to = 0, from = 0;
-    decl String:strTmp[lenFrom*3+1];
+    static const char hexchars[] = "0123456789ABCDEF";
+    int c;
+    int to = 0, from = 0;
 
-    while ( from < lenFrom ) {
+    while ( from < lenFrom && to < lenTo - 3 ) {
         c = strFrom[from++];
         if ( c == '\0' ) {
             break;
         } else if ( c == ' ' ) {
-            strTmp[to++] = '+';
+            strTo[to++] = '+';
         } else if ( IsCharAlpha(c) || IsCharNumeric(c) || ('_' == c) || ('-' == c) || ('.' == c) ) {
-            strTmp[to++] = c;
+            strTo[to++] = c;
         } else {
-            strTmp[to++] = '%';
-            strTmp[to++] = hexchars[c >> 4];
-            strTmp[to++] = hexchars[c & 15];
+            strTo[to++] = '%';
+            strTo[to++] = hexchars[(c >> 4) & 15];
+            strTo[to++] = hexchars[c & 15];
         }
     }
-    strTmp[to] = '\0';
-    strcopy(strTo, lenTo, strTmp);
+    strTo[to] = '\0';
 }
-

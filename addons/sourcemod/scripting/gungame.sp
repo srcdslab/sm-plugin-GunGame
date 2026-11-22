@@ -1,273 +1,205 @@
 #pragma semicolon 1
+#pragma newdecls required
 
 #include <sourcemod>
 #include <sdktools>
+#include <sdkhooks>
 #include <cstrike>
 
-#include <colors>
+#include <multicolors>
 #include <gungame_const>
 #include <gungame>
 #include <gungame_config>
 #include <langutils>
 
-#if defined WITH_SDKHOOKS
-#include <sdkhooks>
-#endif
-
 #undef REQUIRE_PLUGIN
 #include <gungame_stats>
 
-#include "gungame/gungame.h"
-#include "gungame/menu.h"
-#include "gungame/config.h"
-#include "gungame/keyvalue.h"
-#include "gungame/event.h"
-#include "gungame/offset.h"
-#include "gungame/util.h"
+#include "gungame/globals.sp"
 
 #if defined GUNGAME_DEBUG
-#include "gungame/debug.h"
 #include "gungame/debug.sp"
 #endif
 
-#include "gungame/stock.sp"
 #include "gungame/util.sp"
 #include "gungame/natives.sp"
-#include "gungame/offset.sp"
 #include "gungame/config.sp"
 #include "gungame/keyvalue.sp"
 #include "gungame/event.sp"
 #include "gungame/menu.sp"
 #include "gungame/commands.sp"
 
-public Plugin:myinfo = {
-    #if defined WITH_SDKHOOKS
-    name = "GunGame:SM (with SDK Hooks support)",
-    #else
+public Plugin myinfo = {
     name = "GunGame:SM",
-    #endif
     author = GUNGAME_AUTHOR,
     description = "GunGame:SM for SourceMod",
     version = GUNGAME_VERSION,
     url = GUNGAME_URL
 };
 
-public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max) {
-    decl String:file[PLATFORM_MAX_PATH];
-    new filesCount = 0;
-
-    BuildPath(Path_SM, file, sizeof(file), "plugins/gungame.smx");
-    if (FileExists(file)) {
-        filesCount++;
-    }
-    BuildPath(Path_SM, file, sizeof(file), "plugins/gungame_sdkhooks.smx");
-    if (FileExists(file)) {
-        filesCount++;
-    }
-
-    if (filesCount > 1) {
-        SetFailState("ERROR: Check that you DONT have both gungame.smx and gungame_sdkhooks.smx in the plugins folder.");
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+    if (!GG_IsCstrike()) {
+        strcopy(error, err_max, "GunGame:SM only supports Counter-Strike: Source.");
         return APLRes_Failure;
     }
 
-    /*
-    MarkNativeAsOptional("SDKHook");
-    MarkNativeAsOptional("SDKUnhook");
-    */
     RegPluginLibrary("gungame");
     OnCreateNatives();
     return APLRes_Success;
 }
 
-public OnLibraryAdded(const String:name[]) {
-    if ( StrEqual(name, "gungame_st") ) {
+public void OnLibraryAdded(const char[] name)
+{
+    if ( StrEqual(name, "gungame_st") )
+    {
         StatsEnabled = true;
     }
-    /*
-    if (strcmp(name, "sdkhooks.ext") == 0) {
-        g_SdkHooksEnabled = true;
-    }
-    */
 }
 
-public OnLibraryRemoved(const String:name[]) {
-    if ( StrEqual(name, "gungame_st") ) {
+public void OnLibraryRemoved(const char[] name)
+{
+    if ( StrEqual(name, "gungame_st") )
+    {
         StatsEnabled = false;
     }
-    /*
-    if (strcmp(name, "sdkhooks.ext") == 0) {
-        g_SdkHooksEnabled = false;
-    }
-    */
 }
 
-public OnAllPluginsLoaded() {
+public void OnAllPluginsLoaded()
+{
     StatsEnabled = LibraryExists("gungame_st");
-    /*
-    g_SdkHooksEnabled = (GetExtensionFileStatus("sdkhooks.ext") == 1);
-    */
 }
 
-/*
-public Action:Timer_CheckSdkHooks(Handle:timer) {
-    g_SdkHooksEnabled = (GetExtensionFileStatus("sdkhooks.ext") == 1);
-}
-*/
-
-public OnPluginStart() {
-    g_GameName = DetectGame();
-    if (g_GameName == GameName:None) {
-        SetFailState("ERROR: Unsupported game. Please contact the author.");
-    }
-
+public void OnPluginStart()
+{
     StatsEnabled = LibraryExists("gungame_st");
-    /*
-    g_SdkHooksEnabled = (GetExtensionFileStatus("sdkhooks.ext") == 1);
-    if ( !g_SdkHooksEnabled ) {
-        InsertServerCommand("sm exts load sdkhooks");
-        CreateTimer(0.1, Timer_CheckSdkHooks);
-    }
-    */
 
-    LoadTranslations("gungame");
-    PlayerLevelsBeforeDisconnect = CreateTrie();
-    PlayerHandicapTimes = CreateTrie();
-    
+    LoadTranslations("gungame.phrases");
+    PlayerLevelsBeforeDisconnect = new StringMap();
+    PlayerHandicapTimes = new StringMap();
+
     // ConVar
     mp_friendlyfire = FindConVar("mp_friendlyfire");
     mp_restartgame = FindConVar("mp_restartgame");
-    
-    new Handle:Version = CreateConVar("sm_gungamesm_version", GUNGAME_VERSION,    "GunGame Version", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY);
+
+    ConVar version = CreateConVar("sm_gungamesm_version", GUNGAME_VERSION, "GunGame Version", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
 
     /* Just to make sure they it updates the convar version if they just had the plugin reload on map change */
-    SetConVarString(Version, GUNGAME_VERSION);
+    version.SetString(GUNGAME_VERSION);
 
-    gungame_enabled = CreateConVar("gungame_enabled", "1", "Display if GunGame is enabled or disabled", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY);
+    gungame_enabled = CreateConVar("gungame_enabled", "1", "Display if GunGame is enabled or disabled", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
 
     /* Dynamic Forwards */
-    FwdDeath = CreateGlobalForward("GG_OnClientDeath", ET_Hook, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
-    FwdLevelChange = CreateGlobalForward("GG_OnClientLevelChange", ET_Hook, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
-    FwdPoint = CreateGlobalForward("GG_OnClientPointChange", ET_Hook, Param_Cell, Param_Cell, Param_Cell);
-    FwdLeader = CreateGlobalForward("GG_OnLeaderChange", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
-    FwdWinner = CreateGlobalForward("GG_OnWinner", ET_Ignore, Param_Cell, Param_String, Param_Cell);
-    FwdSoundWinner = CreateGlobalForward("GG_OnSoundWinner", ET_Hook, Param_Cell);
-    FwdTripleLevel = CreateGlobalForward("GG_OnTripleLevel", ET_Ignore, Param_Cell);
-    FwdWarmupEnd = CreateGlobalForward("GG_OnWarmupEnd", ET_Ignore);
-    FwdWarmupStart = CreateGlobalForward("GG_OnWarmupStart", ET_Ignore);
-    
-    FwdVoteStart = CreateGlobalForward("GG_OnStartMapVote", ET_Ignore);
-    FwdDisableRtv = CreateGlobalForward("GG_OnDisableRtv", ET_Ignore);
-    
-    FwdStart = CreateGlobalForward("GG_OnStartup", ET_Ignore, Param_Cell);
-    FwdShutdown = CreateGlobalForward("GG_OnShutdown", ET_Ignore, Param_Cell);
+    FwdDeath = new GlobalForward("GG_OnClientDeath", ET_Hook, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
+    FwdLevelChange = new GlobalForward("GG_OnClientLevelChange", ET_Hook, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
+    FwdLevelChanged = new GlobalForward("GG_OnClientLevelChanged", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_String, Param_Cell);
+    FwdKnifeSteal = new GlobalForward("GG_OnKnifeSteal", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
+    FwdPoint = new GlobalForward("GG_OnClientPointChange", ET_Hook, Param_Cell, Param_Cell, Param_Cell);
+    FwdLeader = new GlobalForward("GG_OnLeaderChange", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
+    FwdWinner = new GlobalForward("GG_OnWinner", ET_Ignore, Param_Cell, Param_String, Param_Cell);
+    FwdSoundWinner = new GlobalForward("GG_OnSoundWinner", ET_Hook, Param_Cell);
+    FwdTripleLevel = new GlobalForward("GG_OnTripleLevel", ET_Ignore, Param_Cell);
+    FwdWarmupEnd = new GlobalForward("GG_OnWarmupEnd", ET_Ignore);
+    FwdWarmupStart = new GlobalForward("GG_OnWarmupStart", ET_Ignore);
+    FwdMatchStart = new GlobalForward("GG_OnMatchStart", ET_Ignore);
+
+    FwdVoteStart = new GlobalForward("GG_OnStartMapVote", ET_Ignore);
+    FwdDisableRtv = new GlobalForward("GG_OnDisableRtv", ET_Ignore);
+
+    FwdStart = new GlobalForward("GG_OnStartup", ET_Ignore, Param_Cell);
+    FwdShutdown = new GlobalForward("GG_OnShutdown", ET_Ignore, Param_Cell);
 
     OnKeyValueStart();
-    OnOffsetStart();
     OnCreateCommand();
 
     #if defined GUNGAME_DEBUG
     OnCreateDebug();
     #endif
 
-    g_Cvar_Turbo = CreateConVar("sm_gg_turbo", "0", "Turbo mode");
-    g_Cvar_MultiLevelAmount = CreateConVar("sm_gg_multilevelamount", "3", "Multi level amount");
+    g_Cvar_Turbo = CreateConVar("sm_gg_turbo", "0", "Turbo mode (overridden by TurboMode of gungame.config.txt when the config is read)", _, true, 0.0, true, 1.0);
+    g_Cvar_MultiLevelAmount = CreateConVar("sm_gg_multilevelamount", "3", "Multi level amount (overridden by MultiLevelAmount of gungame.config.txt when the config is read)", _, true, 0.0);
 
-    HookConVarChange(g_Cvar_Turbo, Event_CvarChanged);
-    HookConVarChange(g_Cvar_MultiLevelAmount, Event_CvarChanged);
-}
+    g_Cvar_Turbo.AddChangeHook(Event_CvarChanged);
+    g_Cvar_MultiLevelAmount.AddChangeHook(Event_CvarChanged);
 
-public OnClientPutInServer(client) {
-    if ( IsFakeClient(client) ) {
-        g_SkipSpawn[client] = true;
-    } else {
-        g_SkipSpawn[client] = false;
-    }
-
-    if ( g_SdkHooksEnabled && ( g_Cfg_BlockWeaponSwitchIfKnife || g_Cfg_BlockWeaponSwitchOnNade ) ) {
-        g_BlockSwitch[client] = false;
-        #if defined WITH_SDKHOOKS
-        SDKHook(client, SDKHook_WeaponSwitch, OnWeaponSwitch);
-        #endif
+    /* Late load: hook the players already in game. */
+    for ( int i = 1; i <= MaxClients; i++ )
+    {
+        if ( IsClientInGame(i) )
+        {
+            SDKHook(i, SDKHook_WeaponSwitch, OnWeaponSwitch);
+        }
     }
 }
 
-public OnClientAuthorized(client, const String:auth[])
+public void OnClientPutInServer(int client)
 {
-    if ( RestoreLevelOnReconnect )
-    {    
-        new level = 0;
-        if ( GetTrieValue(PlayerLevelsBeforeDisconnect, auth, level) )
+    g_SkipSpawn[client] = IsFakeClient(client);
+    g_BlockSwitch[client] = false;
+    g_MatchKills[client] = 0;
+
+    SDKHook(client, SDKHook_WeaponSwitch, OnWeaponSwitch);
+}
+
+public void OnClientAuthorized(int client, const char[] auth)
+{
+    if ( RestoreLevelOnReconnect && !IsFakeClient(client) )
+    {
+        char steamid[64];
+        int level = 0;
+        if ( GetClientAuthId(client, AuthId_Steam2, steamid, sizeof(steamid))
+            && PlayerLevelsBeforeDisconnect.GetValue(steamid, level) )
         {
             if ( PlayerLevel[client] < level )
             {
+                int oldLevel = PlayerLevel[client];
                 PlayerLevel[client] = level;
-                UTIL_RecalculateLeader(client, 0, level);
+                UTIL_RecalculateLeader(client, oldLevel, level);
+                UTIL_FireLevelChanged(client, oldLevel, level, GGLevelReason_Reconnect);
             }
         }
     }
-    
+
     UTIL_UpdatePlayerScoreLevel(client);
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
-    SetConVarInt(gungame_enabled, 0);
+    gungame_enabled.IntValue = 0;
 }
 
-public OnMapEnd()
+public void OnMapEnd()
 {
     /* Kill timer on map change if was in warmup round. */
-    if ( WarmupTimer != INVALID_HANDLE )
-    {
-        KillTimer(WarmupTimer);
-        WarmupTimer = INVALID_HANDLE;
-    }
+    delete WarmupTimer;
 
     /* Clear out data */
     WarmupInitialized = false;
     WarmupCounter = 0;
     MapStatus = 0;
-    HostageEntInfo = 0;
     IsVotingCalled = false;
     g_isCalledEnableFriendlyFire = false;
     g_isCalledDisableRtv = false;
     GameWinner = 0;
     CurrentLeader = 0;
-    ClearTrie(PlayerLevelsBeforeDisconnect);
-    ClearTrie(PlayerHandicapTimes);
+    g_MatchStarted = false;
+    UTIL_ResetMatchKills();
 
-    for ( new Sounds:i = Welcome; i < MaxSounds; i++ )
+    delete PlayerLevelsBeforeDisconnect;
+    PlayerLevelsBeforeDisconnect = new StringMap();
+    delete PlayerHandicapTimes;
+    PlayerHandicapTimes = new StringMap();
+
+    for ( Sounds i = Welcome; i < MaxSounds; i++ )
     {
         EventSounds[i][0] = '\0';
     }
 
-    if ( IsObjectiveHooked )
-    {
-        if ( MapStatus & OBJECTIVE_BOMB )
-        {
-            IsObjectiveHooked = false;
-            UnhookEvent("bomb_planted", _BombState);
-            UnhookEvent("bomb_exploded", _BombState);
-            UnhookEvent("bomb_defused", _BombState);
-            UnhookEvent("bomb_pickup", _BombPickup);
-        }
-
-        if ( MapStatus & OBJECTIVE_HOSTAGE )
-        {
-            IsObjectiveHooked = false;
-            UnhookEvent("hostage_killed", _HostageKilled);
-        }
-    }
+    UnhookObjectiveEvents();
 }
 
-public OnClientDisconnect(client)
+public void OnClientDisconnect(int client)
 {
-    if ( g_SdkHooksEnabled && g_Cfg_BlockWeaponSwitchIfKnife ) {
-        #if defined WITH_SDKHOOKS
-        SDKUnhook(client, SDKHook_WeaponSwitch, OnWeaponSwitch);
-        #endif
-    }
-
     /* Clear current leader if player is leader */
     if ( CurrentLeader == client )
     {
@@ -278,40 +210,75 @@ public OnClientDisconnect(client)
         }
     }
 
-    if ( AutoFriendlyFire && (PlayerState[client] & GRENADE_LEVEL) )
+    if ( AutoFriendlyFire && !FFA && (PlayerState[client] & GRENADE_LEVEL) )
     {
         PlayerState[client] &= ~GRENADE_LEVEL;
 
         if ( --PlayerOnGrenade < 1 )
         {
-            if ( g_cfgFriendlyFireOnOff ) {
-                UTIL_ChangeFriendlyFire(false);
-            } else {
-                UTIL_ChangeFriendlyFire(true);
-            }
+            UTIL_ChangeFriendlyFire(!g_cfgFriendlyFireOnOff);
         }
     }
 
-    if ( !IsFakeClient(client) )
+    if ( IsClientConnected(client) && !IsFakeClient(client) )
     {
-        decl String:steamid[64];
-        GetClientAuthString(client, steamid, sizeof(steamid));
-        SetTrieValue(PlayerLevelsBeforeDisconnect, steamid, PlayerLevel[client]);
+        char steamid[64];
+        if ( GetClientAuthId(client, AuthId_Steam2, steamid, sizeof(steamid)) )
+        {
+            PlayerLevelsBeforeDisconnect.SetValue(steamid, PlayerLevel[client]);
+        }
     }
-    
+
     PlayerLevel[client] = 0;
     CurrentKillsPerWeap[client] = 0;
     CurrentLevelPerRound[client] = 0;
     CurrentLevelPerRoundTriple[client] = 0;
     PlayerState[client] = 0;
-    
+    g_MatchKills[client] = 0;
+
     if ( IsClientInGame(client) && IsPlayerAlive(client) )
     {
         UTIL_StopTripleEffects(client);
     }
 }
 
-public GG_OnStartup(bool:Command)
+void HookObjectiveEvents()
+{
+    if ( (MapStatus & OBJECTIVE_BOMB) && !g_BombEventsHooked )
+    {
+        g_BombEventsHooked = true;
+        HookEvent("bomb_planted", _BombState);
+        HookEvent("bomb_exploded", _BombState);
+        HookEvent("bomb_defused", _BombState);
+        HookEvent("bomb_pickup", _BombPickup);
+    }
+
+    if ( (MapStatus & OBJECTIVE_HOSTAGE) && !g_HostageEventsHooked )
+    {
+        g_HostageEventsHooked = true;
+        HookEvent("hostage_killed", _HostageKilled);
+    }
+}
+
+void UnhookObjectiveEvents()
+{
+    if ( g_BombEventsHooked )
+    {
+        g_BombEventsHooked = false;
+        UnhookEvent("bomb_planted", _BombState);
+        UnhookEvent("bomb_exploded", _BombState);
+        UnhookEvent("bomb_defused", _BombState);
+        UnhookEvent("bomb_pickup", _BombPickup);
+    }
+
+    if ( g_HostageEventsHooked )
+    {
+        g_HostageEventsHooked = false;
+        UnhookEvent("hostage_killed", _HostageKilled);
+    }
+}
+
+public void GG_OnStartup(bool Command)
 {
     if ( !IsActive )
     {
@@ -320,65 +287,48 @@ public GG_OnStartup(bool:Command)
         OnEventStart();
     }
 
-    if ( !IsActive )
-    {
-        return;
-    }
-
     UTIL_DisableBuyZones();
-        
+
     if ( !WarmupInitialized && WarmupEnabled )
     {
         StartWarmupRound();
     }
 
     UTIL_FindMapObjective();
+    HookObjectiveEvents();
 
-    if ( !IsObjectiveHooked )
+    char path[PLATFORM_MAX_PATH];
+    for ( Sounds i = Welcome; i < MaxSounds; i++ )
     {
-        if ( MapStatus & OBJECTIVE_BOMB )
+        if ( EventSounds[i][0] )
         {
-            IsObjectiveHooked = true;
-            HookEvent("bomb_planted", _BombState);
-            HookEvent("bomb_exploded", _BombState);
-            HookEvent("bomb_defused", _BombState);
-            HookEvent("bomb_pickup", _BombPickup);
-        }
-    
-        if ( MapStatus & OBJECTIVE_HOSTAGE )
-        {
-            IsObjectiveHooked = true;
-            HookEvent("hostage_killed", _HostageKilled);
+            Format(path, sizeof(path), "sound/%s", EventSounds[i]);
+            AddFileToDownloadsTable(path);
+            PrecacheSound(EventSounds[i]);
         }
     }
 
-    decl String:Hi[PLATFORM_MAX_PATH];
-    for (new Sounds:i = Welcome; i < MaxSounds; i++) {
-        if (EventSounds[i][0]) {
-            Format(Hi, sizeof(Hi), "sound/%s", EventSounds[i]);
-            AddFileToDownloadsTable(Hi);
-            PrecacheSoundFixed(i);
-        }
-    }
-    
     Tcount = 0;
     CTcount = 0;
-    for ( new i = 1; i <= MaxClients; i++ )
+    for ( int i = 1; i <= MaxClients; i++ )
     {
         if ( IsClientInGame(i) )
         {
-            switch ( GetClientTeam(i) ) {
-                case TEAM_T: {
+            switch ( GetClientTeam(i) )
+            {
+                case TEAM_T:
+                {
                     Tcount++;
-                } 
-                case TEAM_CT: {
+                }
+                case TEAM_CT:
+                {
                     CTcount++;
                 }
             }
         }
     }
-    
-    if ( g_Cfg_HandicapUpdate )
+
+    if ( g_Cfg_HandicapUpdate > 0.0 )
     {
         StartHandicapUpdate();
     }
@@ -386,9 +336,15 @@ public GG_OnStartup(bool:Command)
     {
         StopHandicapUpdate();
     }
+
+    /* No warmup: the match starts right away. */
+    if ( !WarmupEnabled )
+    {
+        TryStartMatch();
+    }
 }
 
-public GG_OnShutdown(bool:Command)
+public void GG_OnShutdown(bool Command)
 {
     if ( !IsActive )
     {
@@ -406,14 +362,20 @@ public GG_OnShutdown(bool:Command)
     g_isCalledDisableRtv = false;
     GameWinner = 0;
     CurrentLeader = 0;
-    ClearTrie(PlayerLevelsBeforeDisconnect);
-    ClearTrie(PlayerHandicapTimes);
-        
+    g_MatchStarted = false;
+    UTIL_ResetMatchKills();
+
+    delete PlayerLevelsBeforeDisconnect;
+    PlayerLevelsBeforeDisconnect = new StringMap();
+    delete PlayerHandicapTimes;
+    PlayerHandicapTimes = new StringMap();
+
     OnEventShutdown();
+    StopHandicapUpdate();
 
     if ( Command )
     {
-        for ( new i = 1; i <= MaxClients; i++ )
+        for ( int i = 1; i <= MaxClients; i++ )
         {
             if ( IsClientInGame(i) )
             {
@@ -421,42 +383,38 @@ public GG_OnShutdown(bool:Command)
             }
         }
 
-        if ( WarmupTimer != INVALID_HANDLE )
-        {
-            KillTimer(WarmupTimer);
-            WarmupTimer = INVALID_HANDLE;
-        }
+        delete WarmupTimer;
     }
 
-    if ( IsObjectiveHooked )
+    UnhookObjectiveEvents();
+}
+
+/**
+ * Fires GG_OnMatchStart once per match.
+ */
+void TryStartMatch()
+{
+    if ( g_MatchStarted || !IsActive || WarmupEnabled )
     {
-        if ( MapStatus & OBJECTIVE_BOMB )
-        {
-            IsObjectiveHooked = false;
-            UnhookEvent("bomb_planted", _BombState);
-            UnhookEvent("bomb_exploded", _BombState);
-            UnhookEvent("bomb_defused", _BombState);
-            UnhookEvent("bomb_pickup", _BombPickup);
-        }
-
-        if ( MapStatus & OBJECTIVE_HOSTAGE )
-        {
-            IsObjectiveHooked = false;
-            UnhookEvent("hostage_killed", _HostageKilled);
-        }
+        return;
     }
+
+    g_MatchStarted = true;
+    UTIL_ResetMatchKills();
+
+    Call_StartForward(FwdMatchStart);
+    Call_Finish();
 }
 
 /**
  * Print messages to chat about leaders.
  *
- * @param int client
- * @param int oldLevel
- * @param int newLevel
- * @param String name
- * @return void
+ * @param client
+ * @param oldLevel
+ * @param newLevel
+ * @param name
  */
-PrintLeaderToChat(client, oldLevel, newLevel, const String:name[])
+void PrintLeaderToChat(int client, int oldLevel, int newLevel, const char[] name)
 {
     if ( !CurrentLeader || newLevel <= oldLevel )
     {
@@ -477,7 +435,7 @@ PrintLeaderToChat(client, oldLevel, newLevel, const String:name[])
     if ( newLevel < PlayerLevel[CurrentLeader] )
     {
         // say how much to the lead
-        decl String:subtext[64];
+        char subtext[64];
         FormatLanguageNumberTextEx(client, subtext, sizeof(subtext), PlayerLevel[CurrentLeader]-newLevel, "levels");
         CPrintToChat(client, "%t", "You are levels behind leader", subtext);
         return;
@@ -487,12 +445,12 @@ PrintLeaderToChat(client, oldLevel, newLevel, const String:name[])
     CPrintToChatAllEx(client, "%t", "Is tied with the leader on level", name, newLevel + 1);
 }
 
-StartWarmupRound()
+void StartWarmupRound()
 {
     WarmupInitialized = true;
     PrintToServer("[GunGame] Warmup round has started.");
-    decl String:subtext[64];
-    for ( new i = 1; i <= MaxClients; i++ )
+    char subtext[64];
+    for ( int i = 1; i <= MaxClients; i++ )
     {
         if ( IsClientInGame(i) )
         {
@@ -503,6 +461,7 @@ StartWarmupRound()
     }
 
     /* Start Warmup round */
+    delete WarmupTimer;
     WarmupTimer = CreateTimer(1.0, EndOfWarmup, _, TIMER_REPEAT);
 
     Call_StartForward(FwdWarmupStart);
@@ -510,7 +469,7 @@ StartWarmupRound()
 }
 
 /* End of Warmup */
-public Action:EndOfWarmup(Handle:timer)
+public Action EndOfWarmup(Handle timer)
 {
     if ( ++WarmupCounter <= Warmup_TimeLength )
     {
@@ -518,8 +477,8 @@ public Action:EndOfWarmup(Handle:timer)
         {
             UTIL_PlaySound(0, WarmupTimerSound);
         }
-        decl String:subtext[64];
-        for ( new i = 1; i <= MaxClients; i++ )
+        char subtext[64];
+        for ( int i = 1; i <= MaxClients; i++ )
         {
             if ( IsClientInGame(i) )
             {
@@ -531,47 +490,42 @@ public Action:EndOfWarmup(Handle:timer)
         return Plugin_Continue;
     }
 
-    WarmupTimer = INVALID_HANDLE;
-    //WarmupEnabled = false; // Delayed warmup ending
+    WarmupTimer = null;
+    // Delayed warmup ending: warmup is disabled on the next round start
     DisableWarmupOnRoundEnd = true;
 
     /* Restart Game */
-    SetConVarInt(mp_restartgame, 1);
+    mp_restartgame.IntValue = 1;
 
     CPrintToChatAll("%t", "Warmup round has ended");
 
-    for ( new i = 1; i <= MaxClients; i++ )
+    for ( int i = 1; i <= MaxClients; i++ )
     {
         PlayerLevel[i] = 0;
         UTIL_UpdatePlayerScoreLevel(i);
     }
-    
+
     Call_StartForward(FwdWarmupEnd);
     Call_Finish();
-        
+
     return Plugin_Stop;
 }
 
-StartHandicapUpdate()
+void StartHandicapUpdate()
 {
-    if ( g_Timer_HandicapUpdate != INVALID_HANDLE )
+    if ( g_Timer_HandicapUpdate != null )
     {
         return;
     }
     g_Timer_HandicapUpdate = CreateTimer(g_Cfg_HandicapUpdate, Timer_HandicapUpdate, _, TIMER_REPEAT);
 }
 
-StopHandicapUpdate()
+void StopHandicapUpdate()
 {
-    if ( g_Timer_HandicapUpdate == INVALID_HANDLE )
-    {
-        return;
-    }
-    KillTimer(g_Timer_HandicapUpdate);
-    g_Timer_HandicapUpdate = INVALID_HANDLE;
+    delete g_Timer_HandicapUpdate;
 }
 
-public Action:Timer_HandicapUpdate(Handle:timer)
+public Action Timer_HandicapUpdate(Handle timer)
 {
     if ( WarmupEnabled || !HandicapMode )
     {
@@ -579,17 +533,17 @@ public Action:Timer_HandicapUpdate(Handle:timer)
     }
 
     // get very minimum level
-    new minimum = UTIL_GetMinimumLevel(g_Cfg_HandicapSkipBots);
+    int minimum = UTIL_GetMinimumLevel(g_Cfg_HandicapSkipBots);
     if ( minimum == -1 ) {
         return Plugin_Continue;
     }
     // get handicap level for players above very minimum level
-    new level = UTIL_GetHandicapLevel(0, minimum);
+    int level = UTIL_GetHandicapLevel(0, minimum);
     if ( level <= minimum ) {
         return Plugin_Continue;
     }
-        
-    for ( new i = 1; i <= MaxClients; i++ )
+
+    for ( int i = 1; i <= MaxClients; i++ )
     {
         if ( IsClientInGame(i) && (PlayerLevel[i] == minimum) )
         {
@@ -597,14 +551,15 @@ public Action:Timer_HandicapUpdate(Handle:timer)
                 continue;
             }
             if ( !IsFakeClient(i)
-                 && !TopRankHandicap 
-                 && StatsEnabled 
+                 && !TopRankHandicap
+                 && StatsEnabled
                  && ( !GG_IsPlayerWinsLoaded(i) /* HINT: gungame_stats */
                     || GG_IsPlayerInTopRank(i) ) /* HINT: gungame_stats */
             )
             {
                 continue;
             }
+            int oldLevel = PlayerLevel[i];
             PlayerLevel[i] = level;
             CurrentKillsPerWeap[i] = 0;
             CPrintToChat(i, "%t", "Your level has been updated by handicap");
@@ -613,32 +568,28 @@ public Action:Timer_HandicapUpdate(Handle:timer)
                 UTIL_GiveNextWeapon(i, level);
             }
             UTIL_UpdatePlayerScoreLevel(i);
+            UTIL_FireLevelChanged(i, oldLevel, level, GGLevelReason_Handicap);
         }
     }
-    
+
     return Plugin_Continue;
 }
 
-public GG_OnLoadPlayerWins(client)
+public void GG_OnLoadPlayerWins(int client)
 {
     if ( !(PlayerState[client] & FIRST_JOIN) )
     {
         return;
     }
-    if ( UTIL_SetHandicapForClient(client) && IsPlayerAlive(client) )
+    if ( UTIL_SetHandicapForClient(client) && IsClientInGame(client) && IsPlayerAlive(client) )
     {
         UTIL_GiveNextWeapon(client, PlayerLevel[client]);
     }
 }
 
-
-/**
- * TODO:
- * KillCam event message should probably should block in DeathMatch Style.
- * BarTime probably used to show how long left till respawn.
- */
-
-public OnMapStart() {
+public void OnMapStart()
+{
     PrecacheModel(MULTI_LEVEL_EFFECT2);
     PrecacheModel(MULTI_LEVEL_EFFECT1);
+    PrecacheModel("materials/sprites/crystal_beam1.vmt");
 }

@@ -1,9 +1,24 @@
-FormatLanguageNumberTextEx(client, String:text[], size, number, const String:tplName[])
+#if defined _gungame_langutils_included_
+  #endinput
+#endif
+#define _gungame_langutils_included_
+
+/**
+ * Formats a number with the plural form of the translation phrase
+ * "1>name", "x1>name", "x2-x4>name" or "x5-x20>name" (Russian-like plurals).
+ *
+ * @param client        Client to translate for.
+ * @param text          Output buffer.
+ * @param size          Size of the output buffer.
+ * @param number        The number.
+ * @param tplName       Base name of the phrase.
+ */
+stock void FormatLanguageNumberTextEx(int client, char[] text, int size, int number, const char[] tplName)
 {
     SetGlobalTransTarget(client);
-    decl String:tpl[64];
-    new num10 = number % 10;
-    new num100 = number % 100;
+    char tpl[64];
+    int num10 = number % 10;
+    int num100 = number % 100;
 
     if ( number == 1 ) {
         Format(tpl, sizeof(tpl), "1>%s", tplName);
@@ -16,4 +31,3 @@ FormatLanguageNumberTextEx(client, String:text[], size, number, const String:tpl
     }
     Format(text, size, "%t", tpl, number);
 }
-

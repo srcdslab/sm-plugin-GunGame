@@ -1,4 +1,4 @@
-OnCreateNatives()
+void OnCreateNatives()
 {
     CreateNative("GG_GetClientLevel", __GetClientLevel);
     CreateNative("GG_GetMaxLevel", __GetMaxLevel);
@@ -20,42 +20,72 @@ OnCreateNatives()
     CreateNative("GG_GetWeaponIdKnife", __GetWeaponIdKnife);
     CreateNative("GG_IsWeaponKnife", __IsWeaponKnife);
     CreateNative("GG_GetWeaponIdHegrenade", __GetWeaponIdHegrenade);
+    CreateNative("GG_GetClientKills", __GetClientKills);
+    CreateNative("GG_GetRanking", __GetRanking);
+    CreateNative("GG_GetWinner", __GetWinner);
+    CreateNative("GG_GetLeader", __GetLeader);
+    CreateNative("GG_IsMatchStarted", __IsMatchStarted);
+    CreateNative("GG_IsFFA", __IsFFA);
 }
 
-public __GetWeaponIdKnife(Handle:plugin, numParams) {
+/**
+ * Validates the client index of a native.
+ *
+ * @return      True if valid, false after throwing a native error.
+ */
+bool CheckNativeClient(int client, bool inGame = true)
+{
+    if ( client < 1 || client > MaxClients )
+    {
+        ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index [%d]", client);
+        return false;
+    }
+    if ( inGame && !IsClientInGame(client) )
+    {
+        ThrowNativeError(SP_ERROR_NATIVE, "Client is not currently ingame [%d]", client);
+        return false;
+    }
+    return true;
+}
+
+public int __GetWeaponIdKnife(Handle plugin, int numParams)
+{
     return g_WeaponIdKnife;
 }
 
-public __IsWeaponKnife(Handle:plugin, numParams) {
-    new weaponId = GetNativeCell(1);
-    if(weaponId <= 0 || weaponId > g_WeaponsMaxId) {
+public int __IsWeaponKnife(Handle plugin, int numParams)
+{
+    int weaponId = GetNativeCell(1);
+    if ( weaponId <= 0 || weaponId >= MAX_WEAPONS_COUNT || weaponId > g_WeaponsMaxId )
+    {
         return ThrowNativeError(SP_ERROR_NATIVE, "Weapon index out of range [%d]", weaponId);
     }
 
     return (g_WeaponLevelIndex[weaponId] == g_WeaponLevelIdKnife);
 }
 
-public __GetWeaponIdHegrenade(Handle:plugin, numParams) {
+public int __GetWeaponIdHegrenade(Handle plugin, int numParams)
+{
     return g_WeaponIdHegrenade;
 }
 
-public __IsWarmupInProgress(Handle:plugin, numParams)
+public int __IsWarmupInProgress(Handle plugin, int numParams)
 {
     return WarmupEnabled;
 }
 
-public __SetMaxLevel(Handle:plugin, numParams)
+public int __SetMaxLevel(Handle plugin, int numParams)
 {
-    new level = GetNativeCell(1);
+    int level = GetNativeCell(1);
 
-    if(level < 1 || level > GUNGAME_MAX_LEVEL)
+    if ( level < 1 || level > GUNGAME_MAX_LEVEL )
     {
         return ThrowNativeError(SP_ERROR_NATIVE, "Level out of range [%d]", level);
     }
 
     /* Error checking */
 
-    if(!WeaponOrderName[level - 1][0])
+    if ( !WeaponOrderName[level - 1][0] )
     {
         return ThrowNativeError(SP_ERROR_NATIVE, "Level %d does not have a weapon set", level);
     }
@@ -63,7 +93,7 @@ public __SetMaxLevel(Handle:plugin, numParams)
     WeaponOrderCount = level;
 
     /* Clear any weapon index or name after the max level */
-    for(new i = level; i < GUNGAME_MAX_LEVEL; i++)
+    for ( int i = level; i < GUNGAME_MAX_LEVEL; i++ )
     {
         WeaponOrderName[i][0] = '\0';
         WeaponOrderId[i] = 0;
@@ -77,64 +107,73 @@ public __SetMaxLevel(Handle:plugin, numParams)
  *
  * @param weapon        Name of weapon. short or long name.
  */
-//native GG_GetWeaponIndex(const String:weapon[]);
-public __GetWeaponIndex(Handle:plugin, numParams)
+public int __GetWeaponIndex(Handle plugin, int numParams)
 {
-    decl String:weapon[24];
+    char weapon[MAX_WEAPON_NAME_SIZE];
     GetNativeString(1, weapon, sizeof(weapon));
 
     return UTIL_GetWeaponIndex(weapon);
 }
 
-public __GiveHandicapLevel(Handle:plugin, numParams)
+/**
+ * Gives the handicap level to a client.
+ *
+ * @return      True if the level was raised.
+ */
+bool GiveHandicapLevel(int client)
 {
-    new client = GetNativeCell(1);
-
-    if ( (client < 1) || (client > MaxClients) )
-    {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index [%d]", client);
-    }
-
     if ( !HandicapMode ) {
-        return 0;
+        return false;
     }
-    
+
     if ( g_Cfg_HandicapSkipBots && IsFakeClient(client) ) {
-        return 0;
+        return false;
     }
-    
+
     if ( !IsFakeClient(client)
-         && !TopRankHandicap 
-         && StatsEnabled 
+         && !TopRankHandicap
+         && StatsEnabled
          && ( !GG_IsPlayerWinsLoaded(client) /* HINT: gungame_stats */
             || GG_IsPlayerInTopRank(client) ) /* HINT: gungame_stats */
     )
     {
-        return 0;
+        return false;
     }
-    
-    new level = UTIL_GetHandicapLevel(client);
+
+    int level = UTIL_GetHandicapLevel(client);
     if ( PlayerLevel[client] < level )
     {
+        int oldLevel = PlayerLevel[client];
         PlayerLevel[client] = level;
         CurrentKillsPerWeap[client] = 0;
         UTIL_UpdatePlayerScoreLevel(client);
-        return 1;
+        UTIL_FireLevelChanged(client, oldLevel, level, GGLevelReason_Handicap);
+        return true;
     }
-    
-    return 0;
+
+    return false;
 }
 
-public __RemoveLevelMulti(Handle:plugin, numParams)
+public int __GiveHandicapLevel(Handle plugin, int numParams)
 {
-    new client = GetNativeCell(1);
-    new loose = GetNativeCell(2);
+    int client = GetNativeCell(1);
 
-    if ( client < 1 || client > MaxClients )
+    if ( !CheckNativeClient(client, false) )
     {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index [%d]", client);
-    } else if ( !IsClientInGame(client) ) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Client is not currently ingame [%d]", client);
+        return 0;
+    }
+
+    return GiveHandicapLevel(client) ? 1 : 0;
+}
+
+public int __RemoveLevelMulti(Handle plugin, int numParams)
+{
+    int client = GetNativeCell(1);
+    int loose = GetNativeCell(2);
+
+    if ( !CheckNativeClient(client) )
+    {
+        return 0;
     }
 
     CurrentLevelPerRound[client] -= loose;
@@ -143,9 +182,9 @@ public __RemoveLevelMulti(Handle:plugin, numParams)
         CurrentLevelPerRound[client] = 0;
     }
     CurrentLevelPerRoundTriple[client] = 0;
-    
-    new oldLevel = PlayerLevel[client];
-    new level = UTIL_ChangeLevel(client, -loose);
+
+    int oldLevel = PlayerLevel[client];
+    int level = UTIL_ChangeLevel(client, -loose, false, 0, GGLevelReason_Native);
     if ( level == oldLevel )
     {
         return 0;
@@ -159,15 +198,13 @@ public __RemoveLevelMulti(Handle:plugin, numParams)
     return oldLevel - level;
 }
 
-public __RemoveALevel(Handle:plugin, numParams)
+public int __RemoveALevel(Handle plugin, int numParams)
 {
-    new client = GetNativeCell(1);
+    int client = GetNativeCell(1);
 
-    if ( client < 1 || client > MaxClients )
+    if ( !CheckNativeClient(client) )
     {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index [%d]", client);
-    } else if ( !IsClientInGame(client) ) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Client is not currently ingame [%d]", client);
+        return 0;
     }
 
     if ( --CurrentLevelPerRound[client] < 0 )
@@ -175,9 +212,9 @@ public __RemoveALevel(Handle:plugin, numParams)
         CurrentLevelPerRound[client] = 0;
     }
     CurrentLevelPerRoundTriple[client] = 0;
-    
-    new oldLevel = PlayerLevel[client];
-    new level = UTIL_ChangeLevel(client, -1);
+
+    int oldLevel = PlayerLevel[client];
+    int level = UTIL_ChangeLevel(client, -1, false, 0, GGLevelReason_Native);
     if ( level == oldLevel )
     {
         return 0;
@@ -191,32 +228,30 @@ public __RemoveALevel(Handle:plugin, numParams)
     return 1;
 }
 
-public __AddALevel(Handle:plugin, numParams)
+public int __AddALevel(Handle plugin, int numParams)
 {
-    new client = GetNativeCell(1);
+    int client = GetNativeCell(1);
 
-    if(client < 1 || client > MaxClients)
+    if ( !CheckNativeClient(client) )
     {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index [%d]", client);
-    } else if(!IsClientInGame(client)) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Client is not currently ingame [%d]", client);
+        return 0;
     }
 
     if ( MaxLevelPerRound && CurrentLevelPerRound[client] >= MaxLevelPerRound )
     {
         return 0;
     }
-    
+
     CurrentLevelPerRound[client]++;
 
-    new oldLevel = PlayerLevel[client];
-    new level = UTIL_ChangeLevel(client, 1);
+    int oldLevel = PlayerLevel[client];
+    int level = UTIL_ChangeLevel(client, 1, false, 0, GGLevelReason_Native);
     if ( level == oldLevel )
     {
         return 0;
     }
 
-    if(TurboMode)
+    if ( TurboMode )
     {
         UTIL_GiveNextWeapon(client, level);
     }
@@ -226,73 +261,61 @@ public __AddALevel(Handle:plugin, numParams)
     return level;
 }
 
-public __IsClientCurrentWeapon(Handle:plugin, numParams)
+public int __IsClientCurrentWeapon(Handle plugin, int numParams)
 {
-    new client = GetNativeCell(1);
+    int client = GetNativeCell(1);
 
-    if(client < 1 || client > MaxClients)
+    if ( !CheckNativeClient(client) )
     {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index [%d]", client);
-    } else if(!IsClientInGame(client)) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Client is not currently ingame [%d]", client);
+        return 0;
     }
 
-    decl String:Weapon[24];
+    char Weapon[MAX_WEAPON_NAME_SIZE];
     GetNativeString(2, Weapon, sizeof(Weapon));
 
-    if(strcmp(Weapon, g_WeaponName[WeaponOrderId[PlayerLevel[client]]], false) == 0)
-    {
-        return 1;
-    }
-
-    return 0;
+    return strcmp(Weapon, g_WeaponName[WeaponOrderId[PlayerLevel[client]]], false) == 0;
 }
 
-public __GetClientLevel(Handle:plugin, numParams)
+public int __GetClientLevel(Handle plugin, int numParams)
 {
-    new client = GetNativeCell(1);
+    int client = GetNativeCell(1);
 
-    if(client < 1 || client > MaxClients)
+    if ( !CheckNativeClient(client) )
     {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index [%d]", client);
-    } else if(!IsClientInGame(client)) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Client is not currently ingame [%d]", client);
+        return 0;
     }
 
     return PlayerLevel[client] + 1;
-
 }
 
-public __GetMaxLevel(Handle:plugin, numParams)
+public int __GetMaxLevel(Handle plugin, int numParams)
 {
     return WeaponOrderCount;
 }
 
-public __AddAPoint(Handle:plugin, numParams)
+public int __AddAPoint(Handle plugin, int numParams)
 {
-    new client = GetNativeCell(1);
+    int client = GetNativeCell(1);
 
-    if ( client < 1 || client > MaxClients )
+    if ( !CheckNativeClient(client) )
     {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index [%d]", client);
-    } else if ( !IsClientInGame(client) ) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Client is not currently ingame [%d]", client);
+        return 0;
     }
 
     if ( MaxLevelPerRound && CurrentLevelPerRound[client] >= MaxLevelPerRound )
     {
         return 0;
     }
-    
-    new oldLevel = PlayerLevel[client];
-    new point = ++CurrentKillsPerWeap[client];
+
+    int oldLevel = PlayerLevel[client];
+    int point = ++CurrentKillsPerWeap[client];
     if ( point < UTIL_GetCustomKillPerLevel(oldLevel) )
     {
         return point;
     }
-    
+
     /* They leveled up.*/
-    new level = UTIL_ChangeLevel(client, 1);
+    int level = UTIL_ChangeLevel(client, 1, false, 0, GGLevelReason_Native);
     if ( level == oldLevel )
     {
         return 0;
@@ -309,24 +332,22 @@ public __AddAPoint(Handle:plugin, numParams)
     return 0;
 }
 
-public __RemoveAPoint(Handle:plugin, numParams)
+public int __RemoveAPoint(Handle plugin, int numParams)
 {
-    new client = GetNativeCell(1);
+    int client = GetNativeCell(1);
 
-    if ( client < 1 || client > MaxClients )
+    if ( !CheckNativeClient(client) )
     {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index [%d]", client);
-    } else if ( !IsClientInGame(client) ) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Client is not currently ingame [%d]", client);
+        return 0;
     }
 
-    new oldLevel = PlayerLevel[client];
-    new point = --CurrentKillsPerWeap[client];
+    int oldLevel = PlayerLevel[client];
+    int point = --CurrentKillsPerWeap[client];
     if ( point >= 0 )
     {
         return point;
-    } 
-    
+    }
+
     // remove a level
     if ( --CurrentLevelPerRound[client] < 0 )
     {
@@ -334,7 +355,7 @@ public __RemoveAPoint(Handle:plugin, numParams)
     }
     CurrentLevelPerRoundTriple[client] = 0;
 
-    new level = UTIL_ChangeLevel(client, -1);
+    int level = UTIL_ChangeLevel(client, -1, false, 0, GGLevelReason_Native);
     if ( oldLevel == level )
     {
         return CurrentKillsPerWeap[client] = 0;
@@ -344,95 +365,141 @@ public __RemoveAPoint(Handle:plugin, numParams)
     {
         UTIL_GiveNextWeapon(client, level);
     }
-    
+
     return CurrentKillsPerWeap[client] = UTIL_GetCustomKillPerLevel(level) - 1;
 }
-public __GetClientPointLevel(Handle:plugin, numParams)
-{
-    new client = GetNativeCell(1);
 
-    if(client < 1 || client > MaxClients)
+public int __GetClientPointLevel(Handle plugin, int numParams)
+{
+    int client = GetNativeCell(1);
+
+    if ( !CheckNativeClient(client) )
     {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index [%d]", client);
-    } else if(!IsClientInGame(client)) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Client is not currently ingame [%d]", client);
+        return 0;
     }
 
     return CurrentKillsPerWeap[client];
 }
-public __GetClientMaxPointLevel(Handle:plugin, numParams)
-{
-    new client = GetNativeCell(1);
 
-    if ( client < 1 || client > MaxClients )
+public int __GetClientMaxPointLevel(Handle plugin, int numParams)
+{
+    int client = GetNativeCell(1);
+
+    if ( !CheckNativeClient(client) )
     {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index [%d]", client);
-    } else if ( !IsClientInGame(client) ) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Client is not currently ingame [%d]", client);
+        return 0;
     }
 
     return UTIL_GetCustomKillPerLevel(PlayerLevel[client]);
 }
 
-public __SetWeaponLevel(Handle:plugin, numParams)
+public int __SetWeaponLevel(Handle plugin, int numParams)
 {
-    new level = GetNativeCell(1);
+    int level = GetNativeCell(1);
 
-    if(level < 1 || level > GUNGAME_MAX_LEVEL)
+    if ( level < 1 || level > GUNGAME_MAX_LEVEL )
     {
         return ThrowNativeError(SP_ERROR_NATIVE, "Level out of range [%d]", level);
     }
 
-    new weap = GetNativeCell(2);
+    int weap = GetNativeCell(2);
 
-    if(weap <= 0 || weap > g_WeaponsMaxId)
+    if ( weap <= 0 || weap >= MAX_WEAPONS_COUNT || weap > g_WeaponsMaxId )
     {
         return ThrowNativeError(SP_ERROR_NATIVE, "Weapon index out of range [%d]", weap);
     }
 
-    strcopy(WeaponOrderName[level - 1], sizeof(WeaponOrderName[]), g_WeaponName[weap]);
+    /* WeaponOrderName holds short names (without "weapon_"). */
+    strcopy(WeaponOrderName[level - 1], sizeof(WeaponOrderName[]), g_WeaponName[weap][7]);
     WeaponOrderId[level - 1] = weap;
 
     return 1;
 }
 
-public __SetWeaponLevelByName(Handle:plugin, numParams)
+public int __SetWeaponLevelByName(Handle plugin, int numParams)
 {
-    new level = GetNativeCell(1);
+    int level = GetNativeCell(1);
 
-    if(level < 1 || level > GUNGAME_MAX_LEVEL)
+    if ( level < 1 || level > GUNGAME_MAX_LEVEL )
     {
         return ThrowNativeError(SP_ERROR_NATIVE, "Level out of range [%d]", level);
     }
 
-    decl String:weapon[24];
+    char weapon[MAX_WEAPON_NAME_SIZE];
     GetNativeString(2, weapon, sizeof(weapon));
 
-    new weap = UTIL_GetWeaponIndex(weapon);
+    int weap = UTIL_GetWeaponIndex(weapon);
 
-    if(weap <= 0 || weap > g_WeaponsMaxId)
+    if ( weap <= 0 || weap >= MAX_WEAPONS_COUNT || weap > g_WeaponsMaxId )
     {
         return ThrowNativeError(SP_ERROR_NATIVE, "Weapon name is invalid [%s]", weapon);
     }
 
-    strcopy(WeaponOrderName[level - 1], sizeof(WeaponOrderName[]), g_WeaponName[weap]);
+    /* WeaponOrderName holds short names (without "weapon_"). */
+    strcopy(WeaponOrderName[level - 1], sizeof(WeaponOrderName[]), g_WeaponName[weap][7]);
     WeaponOrderId[level - 1] = weap;
 
     return 1;
 }
 
-public __GetLevelWeaponName(Handle:plugin, numParams)
+public int __GetLevelWeaponName(Handle plugin, int numParams)
 {
-    new level       = GetNativeCell(1);
-    new size        = GetNativeCell(3);
-    if ( level < 1 || level > GUNGAME_MAX_LEVEL)
+    int level       = GetNativeCell(1);
+    int size        = GetNativeCell(3);
+    if ( level < 1 || level > GUNGAME_MAX_LEVEL )
     {
         return ThrowNativeError(SP_ERROR_NATIVE, "Level out of range [%d]", level);
     }
-    if( !WeaponOrderName[level-1][0] )
+    if ( !WeaponOrderName[level-1][0] )
     {
         return ThrowNativeError(SP_ERROR_NATIVE, "Level %d does not have a weapon set", level);
     }
     SetNativeString(2, WeaponOrderName[level-1], size, false);
     return 1;
+}
+
+public int __GetClientKills(Handle plugin, int numParams)
+{
+    int client = GetNativeCell(1);
+
+    if ( !CheckNativeClient(client, false) )
+    {
+        return 0;
+    }
+
+    return g_MatchKills[client];
+}
+
+public int __GetRanking(Handle plugin, int numParams)
+{
+    int maxClients = GetNativeCell(2);
+    if ( maxClients <= 0 )
+    {
+        return 0;
+    }
+
+    int ranking[MAXPLAYERS + 1];
+    int count = UTIL_BuildRanking(ranking, maxClients < sizeof(ranking) ? maxClients : sizeof(ranking));
+    SetNativeArray(1, ranking, count);
+    return count;
+}
+
+public int __GetWinner(Handle plugin, int numParams)
+{
+    return GameWinner;
+}
+
+public int __GetLeader(Handle plugin, int numParams)
+{
+    return CurrentLeader;
+}
+
+public int __IsMatchStarted(Handle plugin, int numParams)
+{
+    return g_MatchStarted;
+}
+
+public int __IsFFA(Handle plugin, int numParams)
+{
+    return FFA != 0;
 }
