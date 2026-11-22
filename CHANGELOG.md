@@ -3,6 +3,15 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.5
+
+### Fixed
+
+- gungame_afk: AFK players were never detected with a deathmatch plugin, which teleports players to
+  a random spawn point after `player_spawn` (the saved spawn position never matched). A player is
+  now AFK when he gave no input at all (movement, attack, jump, duck, use, mouse) between his spawn
+  and his death; deaths less than 5 s after the spawn never count (#7).
+
 ## 2.0.4
 
 ### Fixed

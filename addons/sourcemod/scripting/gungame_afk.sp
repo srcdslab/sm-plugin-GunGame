@@ -14,7 +14,13 @@ int AfkAction;
 int AfkReload;
 bool IsActive;
 
-float PlayerAfk[MAXPLAYERS + 1][3];
+/* AFK = no input at all between the spawn and the death. The spawn position cannot be used:
+ * deathmatch plugins teleport players to a random spawn point after player_spawn. */
+#define AFK_MIN_ALIVE_TIME  5.0   /* a death this soon after the spawn never counts as AFK */
+#define AFK_INPUT_BUTTONS   (IN_ATTACK|IN_ATTACK2|IN_JUMP|IN_DUCK|IN_FORWARD|IN_BACK|IN_MOVELEFT|IN_MOVERIGHT|IN_USE|IN_RELOAD|IN_SPEED|IN_WALK)
+
+bool PlayerHadInput[MAXPLAYERS + 1];
+float PlayerSpawnTime[MAXPLAYERS + 1];
 int PlayerAfkCount[MAXPLAYERS + 1];
 
 State ConfigState;
@@ -38,7 +44,6 @@ public void GG_OnStartup(bool Command)
     if ( !IsActive )
     {
         HookEvent("player_spawn", _PlayerSpawn);
-        HookEvent("weapon_fire", _WeaponFire);
         IsActive = true;
     }
 }
@@ -48,7 +53,6 @@ public void GG_OnShutdown(bool Command)
     if ( IsActive )
     {
         UnhookEvent("player_spawn", _PlayerSpawn);
-        UnhookEvent("weapon_fire", _WeaponFire);
         IsActive = false;
     }
 }
@@ -67,25 +71,22 @@ public void _PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
         return;
     }
 
-    /**
-     * Stores where they are spawn so that they can check for afk on death.
-     */
-    GetEntPropVector(client, Prop_Send, "m_vecOrigin", PlayerAfk[client]);
+    PlayerHadInput[client] = false;
+    PlayerSpawnTime[client] = GetGameTime();
 }
 
-public void _WeaponFire(Event event, const char[] name, bool dontBroadcast)
+public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
 {
-    if ( !IsActive || !AfkManagement )
+    if ( !IsActive || !AfkManagement || PlayerHadInput[client] || IsFakeClient(client) )
     {
-        return;
+        return Plugin_Continue;
     }
 
-    int client = GetClientOfUserId(event.GetInt("userid"));
-
-    if ( client && !IsFakeClient(client) )
+    if ( (buttons & AFK_INPUT_BUTTONS) || mouse[0] || mouse[1] )
     {
-        PlayerAfk[client][0] += 500.0;
+        PlayerHadInput[client] = true;
     }
+    return Plugin_Continue;
 }
 
 public Action GG_OnClientDeath(int Killer, int Victim, int WeaponId, bool TeamKilled)
@@ -96,11 +97,7 @@ public Action GG_OnClientDeath(int Killer, int Victim, int WeaponId, bool TeamKi
         return Plugin_Continue;
     }
 
-    float Origin[3];
-    GetEntPropVector(Victim, Prop_Send, "m_vecOrigin", Origin);
-
-    /* Basically by the time you get here the player drop approx about 55-60 units. So checking z now here is invalid. */
-    if ( PlayerAfk[Victim][0] == Origin[0] && PlayerAfk[Victim][1] == Origin[1] )
+    if ( !PlayerHadInput[Victim] && GetGameTime() - PlayerSpawnTime[Victim] >= AFK_MIN_ALIVE_TIME )
     {
         /* You killed an afk. */
         CPrintToChat(Killer, "%t", "You do not gain a level because you killed an afk");
@@ -162,7 +159,7 @@ public void GG_ConfigParseEnd()
 public void OnClientConnected(int client)
 {
     PlayerAfkCount[client] = 0;
-    PlayerAfk[client][0] = 0.0;
-    PlayerAfk[client][1] = 0.0;
-    PlayerAfk[client][2] = 0.0;
+    /* Unknown until the first spawn: never AFK. */
+    PlayerHadInput[client] = true;
+    PlayerSpawnTime[client] = 0.0;
 }
