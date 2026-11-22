@@ -436,12 +436,7 @@ public void GG_ConfigEnd()
         WeaponOrderName[i][0] = '\0';
     }
 
-    WeaponLevelPages = (WeaponOrderCount / 7);
-
-    if((WeaponOrderCount - (WeaponLevelPages * 7)) != 0)
-    {
-        WeaponLevelPages++;
-    }
+    UTIL_UpdateWeaponLevelPages();
 
     if(InternalIsActive)
     {

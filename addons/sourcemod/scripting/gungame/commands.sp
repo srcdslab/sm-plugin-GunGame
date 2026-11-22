@@ -61,6 +61,11 @@ public Action _CmdDisable(int client, int args)
 
 public Action _CmdLevel(int client, int args)
 {
+    if ( !client )
+    {
+        ReplyToCommand(client, "[GunGame] This command can only be used in game.");
+        return Plugin_Handled;
+    }
     if ( IsActive )
     {
         CreateLevelPanel(client);
@@ -70,6 +75,11 @@ public Action _CmdLevel(int client, int args)
 
 public Action _CmdLeader(int client, int args)
 {
+    if ( !client )
+    {
+        ReplyToCommand(client, "[GunGame] This command can only be used in game.");
+        return Plugin_Handled;
+    }
     if ( IsActive )
     {
         ShowLeaderMenu(client);
@@ -79,6 +89,11 @@ public Action _CmdLeader(int client, int args)
 
 public Action _CmdRules(int client, int args)
 {
+    if ( !client )
+    {
+        ReplyToCommand(client, "[GunGame] This command can only be used in game.");
+        return Plugin_Handled;
+    }
     if(IsActive)
     {
         ShowRulesMenu(client);
@@ -88,6 +103,11 @@ public Action _CmdRules(int client, int args)
 
 public Action _CmdScore(int client, int args)
 {
+    if ( !client )
+    {
+        ReplyToCommand(client, "[GunGame] This command can only be used in game.");
+        return Plugin_Handled;
+    }
     if(IsActive)
     {
         ShowPlayerLevelMenu(client);
@@ -97,6 +117,11 @@ public Action _CmdScore(int client, int args)
 
 public Action _CmdWeapons(int client, int args)
 {
+    if ( !client )
+    {
+        ReplyToCommand(client, "[GunGame] This command can only be used in game.");
+        return Plugin_Handled;
+    }
     if(IsActive)
     {
         ShowWeaponLevelPanel(client);
@@ -106,6 +131,11 @@ public Action _CmdWeapons(int client, int args)
 
 public Action _CmdCommand(int client, int args)
 {
+    if ( !client )
+    {
+        ReplyToCommand(client, "[GunGame] This command can only be used in game.");
+        return Plugin_Handled;
+    }
     if(IsActive)
     {
         ShowCommandPanel(client);

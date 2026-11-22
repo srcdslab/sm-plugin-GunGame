@@ -3,6 +3,23 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.13
+
+### Fixed
+
+- `GG_SetMaxLevel` recomputes the `!weapons` panel pages and moves players above the new maximum to
+  the new last level; the panel could read out of bounds with an empty weapon order (#15).
+- `GG_SetWeaponLevel` / `GG_SetWeaponLevelByName` refuse levels that would leave a gap and extend
+  the order when setting the next level (#15).
+- `GG_RemoveLevelMulti` with a negative count added levels (`"TkLooseLevel" "-1"` rewarded team
+  kills): it throws an error now (#15).
+- `GG_AddALevel` counted refused level changes for `MaxLevelPerRound`; `GG_AddAPoint` returned 0
+  ("levelled") when the level change was refused (#15).
+- `GG_GiveHandicapLevel` threw on an empty slot; `GG_IsClientCurrentWeapon` accepts short names (#15).
+- `level`, `leader`, `rules`, `score`, `weapons`, `commands` from the server console threw
+  `Invalid client index [0]` (#15).
+- Debug build only: `gungamesm_set_level` / `gungamesm_display` are root admin commands (#15).
+
 ## 2.0.12
 
 ### Fixed

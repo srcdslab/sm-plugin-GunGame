@@ -1661,6 +1661,25 @@ public int UTIL_SortRanking(int elem1, int elem2, const int[] array, Handle hndl
 }
 
 /**
+ * Number of 7-line pages of the !weapons panel (at least 1).
+ */
+void UTIL_UpdateWeaponLevelPages()
+{
+    WeaponLevelPages = (WeaponOrderCount + 6) / 7;
+    if ( WeaponLevelPages < 1 )
+    {
+        WeaponLevelPages = 1;
+    }
+    for ( int i = 1; i <= MaxClients; i++ )
+    {
+        if ( ClientOnPage[i] >= WeaponLevelPages )
+        {
+            ClientOnPage[i] = 0;
+        }
+    }
+}
+
+/**
  * @return      The winner if he is still in game, 0 otherwise.
  */
 int UTIL_GetPresentWinner()

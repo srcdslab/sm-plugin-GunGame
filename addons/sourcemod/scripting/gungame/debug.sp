@@ -1,9 +1,13 @@
 void OnCreateDebug() {
-    RegConsoleCmd("gungamesm_display", _CmdDisplay);
-    RegConsoleCmd("gungamesm_set_level", _CmdSetLevel);
+    RegAdminCmd("gungamesm_display", _CmdDisplay, ADMFLAG_ROOT);
+    RegAdminCmd("gungamesm_set_level", _CmdSetLevel, ADMFLAG_ROOT);
 }
 
 public Action _CmdSetLevel(int client, int args) {
+    if ( !client ) {
+        ReplyToCommand(client, "[GunGame] This command can only be used in game.");
+        return Plugin_Handled;
+    }
     char Arg[10];
     GetCmdArg(1, Arg, sizeof(Arg));
 
