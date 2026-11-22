@@ -59,8 +59,9 @@ void UTIL_PrintToUpperLeft(int r, int g, int b, const char[] source, any ...)
     }
 }
 
-/* Weapon Index Lookup via Trie array */
-int UTIL_GetWeaponIndex(const char[] Weapon)
+/* Weapon Index Lookup via Trie array.
+ * quiet: do not log unknown names (player_death reports map entities such as env_explosion). */
+int UTIL_GetWeaponIndex(const char[] Weapon, bool quiet = false)
 {
     if ( !WeaponOpen )
     {
@@ -89,7 +90,10 @@ int UTIL_GetWeaponIndex(const char[] Weapon)
         return g_WeaponIdKnife;
     }
 
-    LogError("[GunGame] Weapon index for \"%s\" not found.", Weapon);
+    if ( !quiet )
+    {
+        LogError("[GunGame] Weapon index for \"%s\" not found.", Weapon);
+    }
 
     return 0;
 }

@@ -3,6 +3,16 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.8
+
+### Fixed
+
+- A player killed by the grenade of a player who had left the server was treated as a world
+  suicide and lost a level (#10).
+- Kills by a player who moved to spectator in the meantime are ignored (#10).
+- Kills credited to map entities (`env_explosion`, `func_physbox`...) no longer log
+  `Weapon index for "..." not found` in the error log (#10).
+
 ## 2.0.7
 
 ### Fixed
