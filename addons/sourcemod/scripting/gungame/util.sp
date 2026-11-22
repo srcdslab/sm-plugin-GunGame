@@ -267,6 +267,21 @@ int UTIL_ChangeLevel(int client, int difference, bool KnifeSteal = false, int vi
         Level = WeaponOrderCount;
     }
 
+    /* Nothing changes (level 1 player losing a level): no forward, no sound, keep the points. */
+    if ( Level == oldLevel )
+    {
+        return oldLevel;
+    }
+
+    if ( !BotCanWin && IsFakeClient(client) && (Level >= WeaponOrderCount) )
+    {
+        /* Bot can't win so just keep them at the last level */
+        return oldLevel;
+    }
+
+    /* The real change after clamping, so listeners (gungame_logging) see what really happens. */
+    difference = Level - oldLevel;
+
     Action ret = Plugin_Continue;
 
     Call_StartForward(FwdLevelChange);
@@ -275,18 +290,13 @@ int UTIL_ChangeLevel(int client, int difference, bool KnifeSteal = false, int vi
     Call_PushCell(difference);
     Call_PushCell(KnifeSteal);
     Call_PushCell(Level == (WeaponOrderCount - 1));
-    Call_PushCell(g_WeaponLevelIndex[WeaponOrderId[Level]] == g_WeaponLevelIdKnife);
+    /* Level == WeaponOrderCount is the winning level: no weapon (out of bounds with 64 levels). */
+    Call_PushCell(Level < WeaponOrderCount && g_WeaponLevelIndex[WeaponOrderId[Level]] == g_WeaponLevelIdKnife);
     Call_Finish(ret);
 
     if ( ret != Plugin_Continue )
     {
         return PlayerLevel[client] = oldLevel;
-    }
-
-    if ( !BotCanWin && IsFakeClient(client) && (Level >= WeaponOrderCount) )
-    {
-        /* Bot can't win so just keep them at the last level */
-        return oldLevel;
     }
 
     // Client got new level
