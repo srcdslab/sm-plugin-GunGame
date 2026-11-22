@@ -3,6 +3,16 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.9
+
+### Fixed
+
+- Weapon give timers gave the level stored when they were created. With instant respawns a spawn
+  give (0.3 s) could fire after a level-up give (0.1 s) and put the previous level's weapon back;
+  kills with it did not count until the next death. The timer now gives the player's current
+  level (warmup keeps its random weapon) (#11).
+- The timer of an older multi-level bonus ended a newer bonus early (#11).
+
 ## 2.0.8
 
 ### Fixed

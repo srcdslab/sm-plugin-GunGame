@@ -172,6 +172,8 @@ bool g_Cfg_BlockWeaponSwitchOnNade = false;
 /* BlockWeaponPickup: players only get the weapons GunGame gives them. */
 bool g_Cfg_BlockWeaponPickup = false;
 bool g_AllowPickup[MAXPLAYERS+1];
+/* Id of the last multi-level bonus of each player (RemoveBonus timers of older bonuses are ignored). */
+int g_TripleBonusId[MAXPLAYERS+1];
 bool g_Cfg_HandicapUseSpectators = false;
 bool g_Cfg_CanLevelUpWithPhysics = false;
 bool g_Cfg_CanLevelUpWithPhysicsG = false;

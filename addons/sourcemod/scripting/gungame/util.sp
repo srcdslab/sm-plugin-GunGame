@@ -569,6 +569,18 @@ public Action UTIL_Timer_GiveNextWeapon(Handle timer, DataPack data)
         return Plugin_Stop;
     }
 
+    /* Give the level the player has NOW: with instant respawns a spawn give (0.3 s) can fire after
+     * a level-up give (0.1 s) and would put the previous level's weapon back. Warmup gives a random
+     * weapon level on purpose, keep it. */
+    if ( !WarmupEnabled )
+    {
+        level = PlayerLevel[client];
+    }
+    if ( GameWinner || level < 0 || level >= WeaponOrderCount )
+    {
+        return Plugin_Stop;
+    }
+
     UTIL_GiveNextWeaponReal(client, level, levelupWithKnife, spawn);
     return Plugin_Stop;
 }
@@ -962,7 +974,11 @@ void CheckForTripleLevel(int client)
         }
 
         UTIL_StartTripleEffects(client);
-        CreateTimer(10.0, RemoveBonus, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+        /* A newer bonus must not be ended by the timer of an older one. */
+        DataPack data = new DataPack();
+        data.WriteCell(GetClientUserId(client));
+        data.WriteCell(++g_TripleBonusId[client]);
+        CreateTimer(10.0, RemoveBonus, data, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE);
 
         Call_StartForward(FwdTripleLevel);
         Call_PushCell(client);
@@ -970,10 +986,12 @@ void CheckForTripleLevel(int client)
     }
 }
 
-public Action RemoveBonus(Handle timer, int userid)
+public Action RemoveBonus(Handle timer, DataPack data)
 {
-    int client = GetClientOfUserId(userid);
-    if ( client )
+    data.Reset();
+    int client = GetClientOfUserId(data.ReadCell());
+    int bonusId = data.ReadCell();
+    if ( client && bonusId == g_TripleBonusId[client] )
     {
         CurrentLevelPerRoundTriple[client] = 0;
         UTIL_StopTripleEffects(client);
