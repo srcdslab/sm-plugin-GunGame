@@ -3,6 +3,17 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.11
+
+### Fixed
+
+- `gg_restart` after a win left the winner set: nobody could level up any more until the map
+  changed. It now resets the whole match state: winner, levels, points, leader, per-round and
+  multi-level counters, grenade level state, the vote / disable RTV / friendly fire level triggers
+  (friendly fire is set back), the reconnect levels and the handicap counters (#13).
+- When the winner left during the end of the game, the next player in his slot was ranked first
+  by `GG_GetRanking` and decided the round end team (#13).
+
 ## 2.0.10
 
 ### Fixed
