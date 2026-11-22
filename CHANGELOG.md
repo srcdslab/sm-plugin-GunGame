@@ -3,6 +3,15 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.4
+
+### Fixed
+
+- gungame_bot: the "no level up on bots with the knife / grenade while another human plays" rule
+  counted teammates. In team mode two humans in the same team could never pass the knife or
+  grenade level on bots. Only humans the killer can score on count now (the other team, or
+  everyone in FFA) (#6).
+
 ## 2.0.3
 
 ### Fixed

@@ -39,7 +39,7 @@ public Action GG_OnClientDeath(int Killer, int Victim, int WeaponId, bool TeamKi
         }
 
         if ( g_Cfg_AllowUpByKnifeBotNoH ) {
-            if ( IsThereAnyHuman() ) {
+            if ( IsThereOtherHuman(Killer) ) {
                 CPrintToChat(Killer, "%t", "You can not level up on bot with knife if there is other human");
                 return Plugin_Handled;
             } else {
@@ -55,7 +55,7 @@ public Action GG_OnClientDeath(int Killer, int Victim, int WeaponId, bool TeamKi
         }
 
         if ( g_Cfg_AllowUpByExplodeBotNoH ) {
-            if ( IsThereAnyHuman() ) {
+            if ( IsThereOtherHuman(Killer) ) {
                 CPrintToChat(Killer, "%t", "You can not level up on bot with hegrenade if there is other human");
                 return Plugin_Handled;
             } else {
@@ -100,20 +100,26 @@ public void GG_ConfigParseEnd()
 }
 
 /**
- * @return      True if more than one human plays (on T or CT).
+ * @param killer    The human who killed a bot.
+ * @return          True if another human the killer can score on plays: any human on T or CT
+ *                  in FFA, a human of the other team otherwise. Teammates do not count, else two
+ *                  humans in the same team could never pass the knife or grenade level on bots.
  */
-bool IsThereAnyHuman()
+bool IsThereOtherHuman(int killer)
 {
-    int humans = 0;
+    bool ffa = GetFeatureStatus(FeatureType_Native, "GG_IsFFA") == FeatureStatus_Available && GG_IsFFA();
+    int killerTeam = GetClientTeam(killer);
     int team;
     for ( int i = 1; i <= MaxClients; i++ ) {
-        if ( IsClientInGame(i) && !IsFakeClient(i) ) {
-            team = GetClientTeam(i);
-            if ( team == TEAM_T || team == TEAM_CT ) {
-                if ( ++humans > 1 ) {
-                    return true;
-                }
-            }
+        if ( i == killer || !IsClientInGame(i) || IsFakeClient(i) || IsClientSourceTV(i) ) {
+            continue;
+        }
+        team = GetClientTeam(i);
+        if ( team != TEAM_T && team != TEAM_CT ) {
+            continue;
+        }
+        if ( ffa || team != killerTeam ) {
+            return true;
         }
     }
     return false;
