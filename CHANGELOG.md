@@ -3,6 +3,16 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.23
+
+### Fixed
+
+- Multi level bonus music (`Triple` sound): it was played to every player at full volume on an
+  automatic channel, so the bonuses of several players overlapped all over the map, and its stop
+  (`SND_STOPLOOPING`) never stopped the mp3. It now comes from the player on its own channel (a new
+  bonus replaces the old music, others hear it only near him) and stops at once when the player dies,
+  changes team or the bonus ends.
+
 ## 2.0.22
 
 ### Added
