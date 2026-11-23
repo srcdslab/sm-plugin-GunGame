@@ -52,7 +52,7 @@ for your SourceMod version and extract it in `cstrike/`:
 | `gungame_tk.smx` | no | Removes `TkLooseLevel` levels after a team kill (never in FFA mode). |
 | `gungame_logging.smx` | no | Logs `gg_win`, `gg_levelup`, `gg_knife_steal`... for HLstatsX. |
 | `gungame_display_winner.smx` | no | Winner MOTD (`DisplayWinnerMotd`, `DisplayWinnerUrl`) and rank on win; needs gungame_stats. |
-| `gungame_winner_effects.smx` | no | Winner effects (`WinnerEffect`). |
+| `gungame_winner_effects.smx` | no | Winner effects (`WinnerEffect`) and fireworks (`gg_fireworks_*` cvars). |
 | `gungame_mapvoting.smx` | no | Executes `gungame.mapvote.cfg` near the end and `gungame.disable_rtv.cfg` at `DisableRtvLevel`. |
 | `gungame_warmup_configs.smx` | no | Executes `gungame.warmupstart.cfg` / `gungame.warmupend.cfg`. |
 
@@ -60,7 +60,7 @@ for your SourceMod version and extract it in `cstrike/`:
 
 | Cvar | Default | Description |
 | --- | --- | --- |
-| `sm_gungamesm_version` | `2.0.20` | Version (read only). |
+| `sm_gungamesm_version` | `2.0.21` | Version (read only). |
 | `gungame_enabled` | `1` | Shows if GunGame is enabled (set by the plugin, use `gg_enable`/`gg_disable`). |
 | `sm_gg_cfgdirname` | `gungame` | Config directory in `cfg/`; the files are read from `cfg/<value>/css/` on the next map. |
 | `sm_gg_turbo` | `0` | Turbo mode; overridden by `TurboMode` when the config is read. |
@@ -68,6 +68,18 @@ for your SourceMod version and extract it in `cstrike/`:
 | `sm_gg_bot_win_kills` | `0` | Bots can win after this many winning kills on the last level (a blocked one keeps them there). `0` = `BotsCanWinGame` decides. Useful on a bots-only server so maps end with a winner. |
 
 Everything else is configured in `cfg/gungame/css/gungame.config.txt` (every key is documented there).
+
+Companion plugin cvars (written to `cfg/sourcemod/<plugin>.cfg` on the first load):
+
+| Cvar | Default | Description |
+| --- | --- | --- |
+| `gg_fireworks_mode` | `1` | gungame_winner_effects fireworks: `0` off, `1` at match end (GunGame win or time limit), `2` on a GunGame win only, `3` at match end and over a player at each level earned in play (kill, knife steal, objective; not handicap, reconnect or admin levels). |
+| `gg_fireworks_bursts` | `3` | Rockets over each alive player in the match end show (`1`-`10`), twice as many over the winner; lowered on a full server so the show fits in ~6 s. |
+
+The match end show runs once per match end, over ~6 s from the win or the start of the
+intermission (keep `mp_chattime` at 7 or more to see all of it). Fireworks are temp entities
+(beams, glow sprite, sparks, ring) with stock CS:S materials and the flashbang bang, nothing to
+download.
 
 ## Commands
 
