@@ -53,6 +53,16 @@ public Plugin myinfo = {
 #define FW_SMALL_RISE       0.4
 #define FW_BIG_BEAMS        14
 #define FW_SMALL_BEAMS      8
+
+/* Confetti: big spark showers (TE_SetupSparks) over the players at match end, like the
+ * TopDefenders crown on Zombie Revival (magnitude 1000, trail 200). Sparks are drawn by the
+ * client, one temp entity each; the winner gets CONFETTI_WINNER_SHOWERS of them. */
+#define CONFETTI_HEIGHT          80.0
+#define CONFETTI_WINNER_SHOWERS  5
+#define CONFETTI_WINNER_INTERVAL 0.9
+#define CONFETTI_WINNER_MAGNITUDE 1000
+#define CONFETTI_PLAYER_MAGNITUDE 400
+#define CONFETTI_TRAIL           200
 #define FW_BIG_RADIUS       140.0
 #define FW_SMALL_RADIUS     60.0
 /* Bursts stay this far under a ceiling found by the trace (indoor maps). */
@@ -91,7 +101,10 @@ int g_FwTrailColor[4] = {255, 190, 110, 255};
 
 ConVar g_cvFireworksMode;
 ConVar g_cvFireworksBursts;
+ConVar g_cvConfetti;
 ArrayList g_Rockets;
+/* Queued confetti showers: {userid, game time, magnitude} */
+ArrayList g_Confetti;
 int g_BeamSprite            = -1;
 int g_HaloSprite            = -1;
 int g_FwGlowSprite          = -1;
@@ -155,9 +168,11 @@ public void OnPluginStart()
 {
     g_cvFireworksMode = CreateConVar("gg_fireworks_mode", "1", "Fireworks: 0 = off, 1 = at match end (GunGame win or time limit), 2 = GunGame winner only, 3 = on every level up and at match end", _, true, 0.0, true, 3.0);
     g_cvFireworksBursts = CreateConVar("gg_fireworks_bursts", "3", "Rockets over each player in the match end show (the winner gets twice as many); lowered automatically on a full server", _, true, 1.0, true, 10.0);
+    g_cvConfetti = CreateConVar("gg_confetti", "1", "Confetti (big spark showers) with the match end fireworks: several over the winner, one over every other alive player", _, true, 0.0, true, 1.0);
     AutoExecConfig(true);
 
     g_Rockets = new ArrayList(sizeof(Rocket));
+    g_Confetti = new ArrayList(3);
 
     HookEvent("player_spawn", Event_PlayerSpawn);
     /* Fired by CS:S when the match ends (time limit or game_end), also after a GunGame win:
@@ -244,6 +259,10 @@ public void Event_WinPanelMatch(Event event, const char[] name, bool dontBroadca
 
 public void OnGameFrame()
 {
+    if ( g_Confetti != null && g_Confetti.Length ) {
+        ConfettiProcess(GetGameTime());
+    }
+
     if ( g_Rockets == null || !g_Rockets.Length ) {
         return;
     }
@@ -346,6 +365,10 @@ void FireworksReset()
         delete g_Rockets;
         g_Rockets = new ArrayList(sizeof(Rocket));
     }
+    if ( g_Confetti != null ) {
+        delete g_Confetti;
+        g_Confetti = new ArrayList(3);
+    }
 }
 
 /**
@@ -381,6 +404,10 @@ void FireworksShow(int winner)
     while ( total > FW_MAX_SHOW_ROCKETS && perPlayer > 1 ) {
         perPlayer--;
         total = (count + (winnerAlive ? 1 : 0)) * perPlayer;
+    }
+
+    if ( g_cvConfetti.BoolValue ) {
+        ConfettiQueueShow(targets, count, winnerAlive ? winner : 0);
     }
 
     float spacing = FW_SHOW_WINDOW / float(total);
@@ -603,5 +630,58 @@ void FireworksBurst(Rocket rocket, float now)
         /* The flashbang bang, higher pitched for the small level up bursts. */
         EmitSoundToAll(GetRandomInt(0, 1) ? FW_SOUND_1 : FW_SOUND_2, SOUND_FROM_WORLD, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS,
             rocket.big ? 0.8 : 0.5, rocket.big ? GetRandomInt(85, 115) : GetRandomInt(115, 135), -1, rocket.burst);
+    }
+}
+
+/*----------------------------------------------------------------------+
+| CONFETTI                                                              |
++----------------------------------------------------------------------*/
+/**
+ * Showers over the winner every CONFETTI_WINNER_INTERVAL seconds, one smaller shower over every
+ * other alive player at a random time of the show window.
+ */
+void ConfettiQueueShow(const int[] targets, int count, int winner)
+{
+    float now = GetGameTime();
+    for ( int i = 0; i < count; i++ ) {
+        if ( targets[i] == winner ) {
+            for ( int n = 0; n < CONFETTI_WINNER_SHOWERS; n++ ) {
+                ConfettiQueue(winner, now + 0.2 + float(n) * CONFETTI_WINNER_INTERVAL, CONFETTI_WINNER_MAGNITUDE);
+            }
+        } else {
+            ConfettiQueue(targets[i], now + GetRandomFloat(0.3, FW_SHOW_WINDOW), CONFETTI_PLAYER_MAGNITUDE);
+        }
+    }
+}
+
+void ConfettiQueue(int client, float time, int magnitude)
+{
+    int index = g_Confetti.Push(GetClientUserId(client));
+    g_Confetti.Set(index, time, 1);
+    g_Confetti.Set(index, magnitude, 2);
+}
+
+void ConfettiProcess(float now)
+{
+    int i = 0;
+    while ( i < g_Confetti.Length ) {
+        if ( now < view_as<float>(g_Confetti.Get(i, 1)) ) {
+            i++;
+            continue;
+        }
+
+        int client = GetClientOfUserId(g_Confetti.Get(i, 0));
+        int magnitude = g_Confetti.Get(i, 2);
+        g_Confetti.Erase(i);
+        if ( !client || !IsClientInGame(client) || !IsPlayerAlive(client) ) {
+            continue;
+        }
+
+        float pos[3];
+        GetClientAbsOrigin(client, pos);
+        pos[2] += CONFETTI_HEIGHT;
+        float up[3] = {0.0, 0.0, 1.0};
+        TE_SetupSparks(pos, up, magnitude, CONFETTI_TRAIL);
+        TE_SendToAll();
     }
 }

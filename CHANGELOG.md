@@ -3,6 +3,14 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.22
+
+### Added
+
+- gungame_winner_effects: confetti with the match end fireworks, big spark showers (`TE_SetupSparks`,
+  magnitude 1000, like the TopDefenders crown on Zombie Revival) five times over the winner and once
+  (magnitude 400) over every other alive player. `gg_confetti` (default `1`) turns them off.
+
 ## 2.0.21
 
 ### Added
