@@ -191,7 +191,7 @@ void ShowPlayerLevelMenu(int client)
     int counter = -1;
     for ( int i = 1; i <= MaxClients; i++ )
     {
-        if ( IsClientInGame(i) )
+        if ( IsPanelPlayer(i) )
         {
             GetClientName(i, Name, sizeof(Name));
             if ( StatsEnabled )
@@ -235,7 +235,7 @@ void ShowLeaderMenu(int client)
         int level = PlayerLevel[CurrentLeader];
         for ( int i = 1; i <= MaxClients; i++ )
         {
-            if ( IsClientInGame(i) && PlayerLevel[i] == level )
+            if ( IsPanelPlayer(i) && PlayerLevel[i] == level )
             {
                 GetClientName(i, Name, sizeof(Name));
                 menu.AddItem(BLANK, Name, ++counter%7? ITEMDRAW_DISABLED: ITEMDRAW_DEFAULT);
@@ -249,6 +249,12 @@ void ShowLeaderMenu(int client)
     }
         
     menu.Display(client, GUNGAME_MENU_TIME);
+}
+
+// Players listed in the level and leader panels: SourceTV, replay and spectators are not playing
+bool IsPanelPlayer(int client)
+{
+    return IsClientInGame(client) && !IsClientSourceTV(client) && !IsClientReplay(client) && GetClientTeam(client) >= CS_TEAM_T;
 }
 
 public int EmptyMenuHandler(Menu menu, MenuAction action, int param1, int param2)
