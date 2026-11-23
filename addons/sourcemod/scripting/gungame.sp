@@ -462,6 +462,16 @@ void PrintLeaderToChat(int client, int oldLevel, int newLevel, const char[] name
     CPrintToChatAllEx(client, "%t", "Is tied with the leader on level", name, newLevel + 1);
 }
 
+/* Hints show color tags literally: strip them. */
+void UTIL_PrintWarmupHint(int client, const char[] subtext)
+{
+    char text[256];
+    SetGlobalTransTarget(client);
+    Format(text, sizeof(text), "%t", "Warmup round seconds left", subtext);
+    CRemoveTags(text, sizeof(text));
+    PrintHintText(client, "%s", text);
+}
+
 void StartWarmupRound()
 {
     WarmupInitialized = true;
@@ -473,7 +483,7 @@ void StartWarmupRound()
         {
             SetGlobalTransTarget(i);
             FormatLanguageNumberTextEx(i, subtext, sizeof(subtext), Warmup_TimeLength - WarmupCounter, "seconds left");
-            PrintHintText(i, "%t", "Warmup round seconds left", subtext);
+            UTIL_PrintWarmupHint(i, subtext);
         }
     }
 
@@ -501,7 +511,7 @@ public Action EndOfWarmup(Handle timer)
             {
                 SetGlobalTransTarget(i);
                 FormatLanguageNumberTextEx(i, subtext, sizeof(subtext), Warmup_TimeLength - WarmupCounter, "seconds left");
-                PrintHintText(i, "%t", "Warmup round seconds left", subtext);
+                UTIL_PrintWarmupHint(i, subtext);
             }
         }
         return Plugin_Continue;

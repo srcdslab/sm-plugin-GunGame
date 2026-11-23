@@ -180,7 +180,22 @@ public Action _CmdStatus(int client, int args)
 
     if(IsActive)
     {
-        ReplyToCommand(client, "[GunGame] Currently not implmented");
+        if ( client )
+        {
+            SetGlobalTransTarget(client);
+        }
+        if ( WarmupEnabled )
+        {
+            ReplyToCommand(client, "%t", "Status: Warmup");
+        }
+        else if ( CurrentLeader && IsClientInGame(CurrentLeader) && PlayerLevel[CurrentLeader] < WeaponOrderCount )
+        {
+            ReplyToCommand(client, "%t", "Status: Leader", CurrentLeader, PlayerLevel[CurrentLeader] + 1, WeaponOrderCount, WeaponOrderName[PlayerLevel[CurrentLeader]]);
+        }
+        else
+        {
+            ReplyToCommand(client, "%t", "Status: No leader");
+        }
     }
 
     return Plugin_Handled;
