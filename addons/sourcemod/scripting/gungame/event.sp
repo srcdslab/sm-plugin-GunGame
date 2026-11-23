@@ -657,6 +657,8 @@ public void _PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
             } else {
                 Format(textHint2, sizeof(textHint2), "\n%t", "Hint: Leader is on level", leaderLevel + 1, WeaponOrderName[leaderLevel]);
             }
+            /* Hints show color tags literally. */
+            CRemoveTags(textHint2, sizeof(textHint2));
 
             StrCat(textHint, sizeof(textHint), textHint2);
         }

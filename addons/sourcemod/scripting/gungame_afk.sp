@@ -125,7 +125,7 @@ public Action GG_OnClientDeath(int Killer, int Victim, int WeaponId, bool TeamKi
         {
             if ( AfkAction & AFK_KICK )
             {
-                KickClient(Victim, "[GunGame] Max afk deaths reached");
+                KickClient(Victim, "%T", "Kick: Max afk deaths reached", Victim);
             }
             else if ( AfkAction & AFK_SPECTATE )
             {

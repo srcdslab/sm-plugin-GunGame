@@ -49,13 +49,16 @@ void UTIL_ConvertWeaponToIndex()
 
 void UTIL_PrintToUpperLeft(int r, int g, int b, const char[] source, any ...)
 {
-    char Buffer[64];
+    /* 256: a 64-byte UTF-8 name plus a translated suffix did not fit in 64. */
+    char Buffer[256];
     for ( int i = 1; i <= MaxClients; i++ )
     {
         if ( IsClientInGame(i) && !IsFakeClient(i) )
         {
             SetGlobalTransTarget(i);
             VFormat(Buffer, sizeof(Buffer), source, 5);
+            /* A dialog shows color tags literally. */
+            CRemoveTags(Buffer, sizeof(Buffer));
 
             KeyValues Msg = new KeyValues("msg");
             Msg.SetString("title", Buffer);

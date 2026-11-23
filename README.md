@@ -60,7 +60,7 @@ for your SourceMod version and extract it in `cstrike/`:
 
 | Cvar | Default | Description |
 | --- | --- | --- |
-| `sm_gungamesm_version` | `2.0.16` | Version (read only). |
+| `sm_gungamesm_version` | `2.0.17` | Version (read only). |
 | `gungame_enabled` | `1` | Shows if GunGame is enabled (set by the plugin, use `gg_enable`/`gg_disable`). |
 | `sm_gg_cfgdirname` | `gungame` | Config directory in `cfg/`; the files are read from `cfg/<value>/css/` on the next map. |
 | `sm_gg_turbo` | `0` | Turbo mode; overridden by `TurboMode` when the config is read. |

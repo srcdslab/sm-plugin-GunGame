@@ -3,6 +3,24 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.17
+
+### Added
+
+- Every phrase in 13 languages: en, fr, de, es, pt, ru, chi, pl, tr, it, ua, zho, cze (fr, chi, tr,
+  it, ua, zho and cze are new; de completed and reviewed; pt rewritten in Brazilian Portuguese,
+  which is what SourceMod's `pt` means) (#19).
+- `gg_status` tells whether the warmup runs and who leads on which level (it replied
+  "Currently not implmented") (#19).
+
+### Fixed
+
+- Polish plural forms (seconds, levels, kills, times, wins) and several wrong Polish sentences;
+  German team kill and suicide lines; Spanish "Victoris" (#19).
+- The AFK kick reason is translated (#19).
+- Color tags are stripped from hint boxes and the winner dialog, which show them literally; the
+  winner dialog buffer fits long UTF-8 names (#19).
+
 ## 2.0.16
 
 ### Fixed
