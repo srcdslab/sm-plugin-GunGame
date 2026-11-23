@@ -40,6 +40,7 @@ ConVar mp_restartgame;
 ConVar gungame_enabled;
 ConVar g_Cvar_Turbo;
 ConVar g_Cvar_MultiLevelAmount;
+ConVar g_Cvar_BotWinKills;
 
 /* Status forwards */
 GlobalForward FwdLevelChange;
@@ -116,6 +117,8 @@ int KnifeProMinLevel;
 bool KnifeElite;
 bool AutoFriendlyFire;
 bool BotCanWin;
+/* Winning kills a bot has made on the last level and that sm_gg_bot_win_kills did not count as a win yet. */
+int g_BotWinAttempts[MAXPLAYERS + 1];
 bool WarmupEnabled = true;
 bool DisableWarmupOnRoundEnd = false;
 bool WarmupInitialized;

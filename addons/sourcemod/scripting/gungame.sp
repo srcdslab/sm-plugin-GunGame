@@ -118,6 +118,7 @@ public void OnPluginStart()
 
     g_Cvar_Turbo = CreateConVar("sm_gg_turbo", "0", "Turbo mode (overridden by TurboMode of gungame.config.txt when the config is read)", _, true, 0.0, true, 1.0);
     g_Cvar_MultiLevelAmount = CreateConVar("sm_gg_multilevelamount", "3", "Multi level amount (overridden by MultiLevelAmount of gungame.config.txt when the config is read)", _, true, 0.0);
+    g_Cvar_BotWinKills = CreateConVar("sm_gg_bot_win_kills", "0", "Bots can win the game after this many winning kills on the last level (0 = BotsCanWinGame of gungame.config.txt decides, a bot wins on its first one when it is 1)", _, true, 0.0, true, 20.0);
 
     g_Cvar_Turbo.AddChangeHook(Event_CvarChanged);
     g_Cvar_MultiLevelAmount.AddChangeHook(Event_CvarChanged);
@@ -246,6 +247,7 @@ public void OnClientDisconnect(int client)
     }
 
     PlayerLevel[client] = 0;
+    g_BotWinAttempts[client] = 0;
     CurrentKillsPerWeap[client] = 0;
     CurrentLevelPerRound[client] = 0;
     CurrentLevelPerRoundTriple[client] = 0;
@@ -529,6 +531,7 @@ public Action EndOfWarmup(Handle timer)
     for ( int i = 1; i <= MaxClients; i++ )
     {
         PlayerLevel[i] = 0;
+        g_BotWinAttempts[i] = 0;
         UTIL_UpdatePlayerScoreLevel(i);
     }
 

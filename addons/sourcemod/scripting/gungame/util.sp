@@ -313,10 +313,16 @@ int UTIL_ChangeLevel(int client, int difference, bool KnifeSteal = false, int vi
         return oldLevel;
     }
 
-    if ( !BotCanWin && IsFakeClient(client) && (Level >= WeaponOrderCount) )
+    if ( IsFakeClient(client) && (Level >= WeaponOrderCount) )
     {
-        /* Bot can't win so just keep them at the last level */
-        return oldLevel;
+        /* sm_gg_bot_win_kills > 0: a bot must repeat its winning kill that many times on the last level,
+         * so a bots-only server still ends its maps without bots winning on a lucky kill.
+         * 0: BotsCanWinGame alone decides. Blocked bots just stay on the last level. */
+        int needed = g_Cvar_BotWinKills.IntValue;
+        if ( needed <= 0 ? !BotCanWin : ++g_BotWinAttempts[client] < needed )
+        {
+            return oldLevel;
+        }
     }
 
     /* The real change after clamping, so listeners (gungame_logging) see what really happens. */
@@ -341,6 +347,7 @@ int UTIL_ChangeLevel(int client, int difference, bool KnifeSteal = false, int vi
 
     // Client got new level
     PlayerLevel[client] = Level;
+    g_BotWinAttempts[client] = 0;
     if ( KnifeSteal && g_Cfg_KnifeProRecalcPoints && (oldLevel != Level) ) {
         CurrentKillsPerWeap[client] = CurrentKillsPerWeap[client] * UTIL_GetCustomKillPerLevel(Level) / UTIL_GetCustomKillPerLevel(oldLevel);
     } else {
@@ -1703,6 +1710,7 @@ void UTIL_ResetMatchState()
     for ( int i = 1; i <= MaxClients; i++ )
     {
         PlayerLevel[i] = 0;
+        g_BotWinAttempts[i] = 0;
         CurrentKillsPerWeap[i] = 0;
         CurrentLevelPerRound[i] = 0;
         CurrentLevelPerRoundTriple[i] = 0;
