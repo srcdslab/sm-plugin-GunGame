@@ -298,8 +298,12 @@ public void GG_ConfigKeyValue(const char[] key, const char[] value)
                     g_Cfg_RandomWeaponReservLevels[level - 1] = 1;
                 }
             }
-            else if ( ( strcmp("RandomWeaponOrder", key, false) == 0 ) && ( StringToInt(value) == 1 ) )
+            else if ( strcmp("RandomWeaponOrder", key, false) == 0 )
             {
+                if ( StringToInt(value) != 1 )
+                {
+                    return;
+                }
                 // Setup random weapon order.
                 RandomWeaponOrder = true;
                 int sizeOfRandom;

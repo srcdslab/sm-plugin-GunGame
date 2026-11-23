@@ -3,6 +3,13 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.18
+
+### Fixed
+
+- `"RandomWeaponOrder" "0"` logged `WeaponOrder: invalid level "RandomWeaponOrder"` at every map
+  change (regression of 2.0.12, found on the NiDE server) (#14).
+
 ## 2.0.17
 
 ### Added
