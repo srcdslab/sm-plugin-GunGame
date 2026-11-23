@@ -3,6 +3,14 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.20
+
+### Added
+
+- `sm_gg_bot_win_kills` (default `0`): bots can win the game after that many winning kills on the last
+  level; each blocked one keeps them on the last level, the count restarts when their level changes.
+  `0` keeps the `BotsCanWinGame` behaviour. Asked on the NiDE server so maps with only bots end with a winner.
+
 ## 2.0.19
 
 ### Fixed

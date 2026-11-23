@@ -279,7 +279,7 @@ void ShowJoinMsgPanel(int client)
     faluco.SetTitle(text);
     faluco.DrawText(BLANK_SPACE);
 
-    if(BotCanWin)
+    if ( BotCanWin || g_Cvar_BotWinKills.IntValue > 0 )
     {
         Format(text, sizeof(text), "%t", "JoinPanel: Bots can win the game is ENABLED!!");
         faluco.DrawText(text);

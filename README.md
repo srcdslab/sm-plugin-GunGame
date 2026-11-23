@@ -60,11 +60,12 @@ for your SourceMod version and extract it in `cstrike/`:
 
 | Cvar | Default | Description |
 | --- | --- | --- |
-| `sm_gungamesm_version` | `2.0.19` | Version (read only). |
+| `sm_gungamesm_version` | `2.0.20` | Version (read only). |
 | `gungame_enabled` | `1` | Shows if GunGame is enabled (set by the plugin, use `gg_enable`/`gg_disable`). |
 | `sm_gg_cfgdirname` | `gungame` | Config directory in `cfg/`; the files are read from `cfg/<value>/css/` on the next map. |
 | `sm_gg_turbo` | `0` | Turbo mode; overridden by `TurboMode` when the config is read. |
 | `sm_gg_multilevelamount` | `3` | Multi level amount; overridden by `MultiLevelAmount` when the config is read. |
+| `sm_gg_bot_win_kills` | `0` | Bots can win after this many winning kills on the last level (a blocked one keeps them there). `0` = `BotsCanWinGame` decides. Useful on a bots-only server so maps end with a winner. |
 
 Everything else is configured in `cfg/gungame/css/gungame.config.txt` (every key is documented there).
 
