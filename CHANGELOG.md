@@ -3,6 +3,13 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.19
+
+### Fixed
+
+- The players level panel (`!level`, option 4) and the leader panel listed SourceTV, replay bots and
+  spectators: they now list only players on T or CT (found on the NiDE server).
+
 ## 2.0.18
 
 ### Fixed
