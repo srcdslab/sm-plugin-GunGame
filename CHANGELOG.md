@@ -3,6 +3,18 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.20
+
+### Added
+
+- gungame_winner_effects: fireworks made of temp entities (a rising trail, then colored radial
+  beams, a flash, sparks and a ring) with the bang of the flashbang. `gg_fireworks_mode` (default
+  `1`): `0` off, `1` a show over every alive player at match end (GunGame win or time limit, once
+  per match end, during the intermission), `2` the same on a GunGame win only, `3` also a small
+  burst over a player at each level earned in play (kill, knife steal, objective).
+  `gg_fireworks_bursts` (default `3`) sets the rockets per player in the show; the winner gets
+  twice as many. The cvars are written to `cfg/sourcemod/gungame_winner_effects.cfg`.
+
 ## 2.0.19
 
 ### Fixed
