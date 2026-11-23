@@ -892,7 +892,7 @@ void UTIL_StartTripleEffects(int client)
     {
         SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", g_Cfg_TripleLevelBonusSpeed);
     }
-    UTIL_PlaySound(0, Triple, client);
+    UTIL_PlayTripleMusic(client);
     if ( g_Cfg_TripleLevelEffect )
     {
         UTIL_StartEffectClient(client);
@@ -909,6 +909,32 @@ void UTIL_StopBonusGravity(int client)
     {
         SetEntityGravity(client, 1.0);
     }
+}
+
+/* The multi level music comes from the player, on its own channel: a new bonus replaces the
+ * previous music of that player instead of stacking, others only hear it near him, and
+ * StopSound on that channel cuts it at once (death, team change, end of the bonus).
+ * It used to be played to everyone at SNDLEVEL_RAIDSIREN on an automatic channel, so the
+ * bonuses of several bots overlapped all over the map, and the SND_STOPLOOPING "stop" never
+ * stopped a non looping mp3 (seen on the NiDE server on 2026-11-23). */
+#define TRIPLE_MUSIC_CHANNEL (SNDCHAN_USER_BASE + 7)
+
+void UTIL_PlayTripleMusic(int client)
+{
+    if ( !EventSounds[Triple][0] )
+    {
+        return;
+    }
+    EmitSoundToAll(EventSounds[Triple], client, TRIPLE_MUSIC_CHANNEL, SNDLEVEL_NORMAL);
+}
+
+void UTIL_StopTripleMusic(int client)
+{
+    if ( !EventSounds[Triple][0] )
+    {
+        return;
+    }
+    StopSound(client, TRIPLE_MUSIC_CHANNEL, EventSounds[Triple]);
 }
 
 void UTIL_StopTripleEffects(int client)
@@ -934,7 +960,7 @@ void UTIL_StopTripleEffects(int client)
     {
         SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", 1.0);
     }
-    UTIL_PlaySound(0, Triple, client, true);
+    UTIL_StopTripleMusic(client);
     if ( g_Cfg_TripleLevelEffect )
     {
         UTIL_StopEffectClient(client);
