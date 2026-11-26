@@ -3,6 +3,15 @@
 All notable changes of this fork are listed here. The history of the original
 GunGame:SM (1.2.16 and before) is in [doc/CHANGELOG.txt](doc/CHANGELOG.txt).
 
+## 2.0.24
+
+### Added
+
+- `sm_gg_allow_snipers` (default `1`, nothing changes): at `0` the AWP and the auto snipers (`sg550`,
+  `g3sg1`) are removed from the weapon order when the config is read (the following levels move up, their
+  `MultipleKillsPerLevel` value with them) and are not given as `WarmupWeapon`. The scout stays allowed.
+  The order is built at map start, so a change applies on the next map: set it in `server.cfg`.
+
 ## 2.0.23
 
 ### Fixed

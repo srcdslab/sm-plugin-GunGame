@@ -435,6 +435,11 @@ public void GG_ConfigEnd()
      * Truncate the WeaponOrderCount if does not equal to MAX_LEVEL
      */
     UTIL_ConvertWeaponToIndex();
+    if ( UTIL_IsDisallowedSniper(g_Cfg_WarmupWeapon) )
+    {
+        LogMessage("[GunGame] sm_gg_allow_snipers is 0 :: WarmupWeapon %s ignored", g_WeaponName[g_Cfg_WarmupWeapon]);
+        g_Cfg_WarmupWeapon = 0;
+    }
     for ( int i = WeaponOrderCount; i < GUNGAME_MAX_LEVEL; i++ )
     {
         WeaponOrderName[i][0] = '\0';
