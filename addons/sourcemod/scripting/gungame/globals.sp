@@ -41,6 +41,7 @@ ConVar gungame_enabled;
 ConVar g_Cvar_Turbo;
 ConVar g_Cvar_MultiLevelAmount;
 ConVar g_Cvar_BotWinKills;
+ConVar g_Cvar_AllowSnipers;
 
 /* Status forwards */
 GlobalForward FwdLevelChange;

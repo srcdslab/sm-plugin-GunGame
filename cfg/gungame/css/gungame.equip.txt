@@ -31,6 +31,8 @@
          * Automatic Rifles:
          * sg550, g3sg1
          *
+         * The cvar sm_gg_allow_snipers 0 removes the awp, sg550 and g3sg1 levels (applied on the next map).
+         *
          * Machine Gun:
          * m249
          *

@@ -30,6 +30,11 @@ void UTIL_ConvertWeaponToIndex()
             LogError("[GunGame] Weapon Order has an invalid entry :: name %s :: level %d, level removed", WeaponOrderName[i], i + 1);
             continue;
         }
+        if ( UTIL_IsDisallowedSniper(b) )
+        {
+            LogMessage("[GunGame] sm_gg_allow_snipers is 0 :: name %s :: level %d, level removed", WeaponOrderName[i], i + 1);
+            continue;
+        }
 
         if ( count != i )
         {
@@ -45,6 +50,20 @@ void UTIL_ConvertWeaponToIndex()
         CustomKillPerLevel[i] = 0;
     }
     WeaponOrderCount = count;
+}
+
+/* True for the AWP and the auto snipers when sm_gg_allow_snipers is 0. The scout stays allowed.
+ * The cvar is read with the config (GG_ConfigEnd), so a change applies on the next map. */
+bool UTIL_IsDisallowedSniper(int weaponIndex)
+{
+    if ( !weaponIndex || g_Cvar_AllowSnipers == null || g_Cvar_AllowSnipers.BoolValue )
+    {
+        return false;
+    }
+
+    return weaponIndex == UTIL_GetWeaponIndex("awp", true)
+        || weaponIndex == UTIL_GetWeaponIndex("sg550", true)
+        || weaponIndex == UTIL_GetWeaponIndex("g3sg1", true);
 }
 
 void UTIL_PrintToUpperLeft(int r, int g, int b, const char[] source, any ...)

@@ -60,12 +60,13 @@ for your SourceMod version and extract it in `cstrike/`:
 
 | Cvar | Default | Description |
 | --- | --- | --- |
-| `sm_gungamesm_version` | `2.0.23` | Version (read only). |
+| `sm_gungamesm_version` | `2.0.24` | Version (read only). |
 | `gungame_enabled` | `1` | Shows if GunGame is enabled (set by the plugin, use `gg_enable`/`gg_disable`). |
 | `sm_gg_cfgdirname` | `gungame` | Config directory in `cfg/`; the files are read from `cfg/<value>/css/` on the next map. |
 | `sm_gg_turbo` | `0` | Turbo mode; overridden by `TurboMode` when the config is read. |
 | `sm_gg_multilevelamount` | `3` | Multi level amount; overridden by `MultiLevelAmount` when the config is read. |
 | `sm_gg_bot_win_kills` | `0` | Bots can win after this many winning kills on the last level (a blocked one keeps them there). `0` = `BotsCanWinGame` decides. Useful on a bots-only server so maps end with a winner. |
+| `sm_gg_allow_snipers` | `1` | `0` removes the AWP and auto sniper (`sg550`, `g3sg1`) levels from the weapon order and ignores them as `WarmupWeapon`; the scout stays. Read with the config at map start, so set it in `server.cfg` (a change, or a value set in `gungame.mapconfig.cfg`, applies on the next map). |
 
 Everything else is configured in `cfg/gungame/css/gungame.config.txt` (every key is documented there).
 
